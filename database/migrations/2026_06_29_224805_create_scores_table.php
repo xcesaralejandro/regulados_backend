@@ -20,6 +20,7 @@ return new class extends Migration
             $table->unsignedBigInteger('reference_id')->nullable();
             $table->string('reference_table')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

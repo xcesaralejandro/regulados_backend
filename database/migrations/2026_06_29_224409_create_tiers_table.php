@@ -17,6 +17,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->integer('min_points')->default(0);
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

@@ -1,9 +1,21 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\EventCategoryController;
+use App\Http\Controllers\UniversityController;
 use Illuminate\Support\Facades\Route;
 
-Route::post('/auth/login', [AuthController::class, 'loginWithCode'])->name('login');
-Route::post('/auth/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum')->name('logout');
-Route::post('/auth/register', [AuthController::class, 'register'])->name('register');
-Route::post('/auth/resend-code', [AuthController::class, 'resendCode'])->name('auth.resend_code');
+Route::prefix('auth')->group(function () {
+  Route::post('/login', [AuthController::class, 'loginWithCode'])->name('login');
+  Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum')->name('logout');
+  Route::post('/register', [AuthController::class, 'register'])->name('auth.register');
+  Route::post('/resend-code', [AuthController::class, 'resendCode'])->name('auth.resend_code');
+});
+
+Route::apiResource('universities', UniversityController::class)
+  ->names(['index' => 'university.index'])
+  ->middleware('auth:sanctum');
+
+Route::apiResource('event-categories', EventCategoryController::class)
+  ->names(['index' => 'event-categories.index'])
+  ->middleware('auth:sanctum');

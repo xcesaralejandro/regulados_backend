@@ -14,19 +14,18 @@ class AuthController extends Controller
 {
     public function loginWithCode(Request $request)
     {
-        $fields = $request->validate([
+        $request->validate([
             'email' => ['required', 'email'],
-            'code' => ['required', 'digits:6'],
+            'code' => ['required', 'size:6'],
         ]);
-        $user = User::with('program.university')->where('email', $fields['email'])->first();
-        if (!$user || !$user->verifyAccessCode($fields['code'])) {
+        $user = User::with('program.university')->where('email', $request->email)->first();
+        if (!$user || !$user->verifyAccessCode($request->code)) {
             return response()->json(null, 401);
         }
         $user->update(['access_code' => null, 'access_code_expires_at' => null]);
         $token = $user->createToken('auth_token')->plainTextToken;
         return response()->json([
             'access_token' => $token,
-            'token_type' => 'Bearer',
             'user' => $user
         ], 200);
     }

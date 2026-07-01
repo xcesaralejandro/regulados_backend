@@ -11,7 +11,7 @@ class EventCategory extends Model
     use HasFactory, SoftDeletes;
 
     protected $table = 'event_categories';
-    protected $fillable = ['name', 'description'];
+    protected $fillable = ['name', 'description', 'icon', 'text_color', 'background_color'];
     protected $hidden = ['created_at', 'updated_at', 'deleted_at'];
 
     public function events()
