@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('canvas_client_id')->nullable();
             $table->string('canvas_client_secret')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

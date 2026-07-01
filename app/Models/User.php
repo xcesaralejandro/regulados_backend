@@ -8,7 +8,6 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-
 class User extends Authenticatable
 {
     use HasFactory, Notifiable, SoftDeletes, HasApiTokens;
@@ -29,7 +28,7 @@ class User extends Authenticatable
         'avatar'
     ];
 
-    protected $hidden = ['created_at', 'updated_at', 'deleted_at'];
+    protected $hidden = ['created_at', 'updated_at', 'deleted_at', 'password', 'remember_token'];
 
     public function program()
     {
