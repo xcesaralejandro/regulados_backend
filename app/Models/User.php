@@ -2,15 +2,16 @@
 
 namespace App\Models;
 
+use App\Traits\HasAccessCode;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, SoftDeletes, HasApiTokens;
+    use HasFactory, SoftDeletes, HasApiTokens, HasAccessCode;
 
     protected $table = 'users';
 
@@ -21,14 +22,15 @@ class User extends Authenticatable
         'custom_gender',
         'semester',
         'email',
-        'password',
         'phone',
         'birthdate',
         'program_id',
-        'avatar'
+        'avatar',
+        'access_code',
+        'access_code_expires_at',
     ];
 
-    protected $hidden = ['created_at', 'updated_at', 'deleted_at', 'password', 'remember_token'];
+    protected $hidden = ['created_at', 'updated_at', 'deleted_at', 'remember_token', 'access_code', 'access_code_expires_at'];
 
     public function program()
     {

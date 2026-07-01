@@ -24,6 +24,8 @@ return new class extends Migration
             $table->date('birthdate');
             $table->string('password')->nullable();
             $table->text('avatar')->nullable();
+            $table->string('access_code', 6)->nullable();
+            $table->timestamp('access_code_expires_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
             $table->softDeletes();
