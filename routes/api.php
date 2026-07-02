@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EventCategoryController;
 use App\Http\Controllers\UniversityController;
+use App\Http\Controllers\EventController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function () {
@@ -19,3 +20,11 @@ Route::apiResource('universities', UniversityController::class)
 Route::apiResource('event-categories', EventCategoryController::class)
   ->names(['index' => 'event-categories.index'])
   ->middleware('auth:sanctum');
+
+Route::apiResource('events', EventController::class)
+  ->names([
+    'index' => 'event.index',
+    'store' => 'event.store',
+    'update' => 'event.update',
+    'destroy' => 'event.destroy',
+  ])->middleware('auth:sanctum');
