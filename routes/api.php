@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EventCategoryController;
 use App\Http\Controllers\UniversityController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\EventSeriesController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function () {
@@ -28,3 +29,8 @@ Route::apiResource('events', EventController::class)
     'update' => 'event.update',
     'destroy' => 'event.destroy',
   ])->middleware('auth:sanctum');
+
+
+Route::post('event-series', [EventSeriesController::class, 'store'])->middleware('auth:sanctum');
+Route::put('event-series/{repeatCode}', [EventSeriesController::class, 'update'])->middleware('auth:sanctum');
+Route::delete('event-series/{repeatCode}', [EventSeriesController::class, 'destroy'])->middleware('auth:sanctum');

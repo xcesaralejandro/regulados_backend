@@ -22,7 +22,7 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->enum('visibility', ['public', 'contacts', 'private'])->default('private');
             $table->timestamp('start_at');
-            $table->timestamp('end_at')->nullable();
+            $table->timestamp('end_at');
             $table->timestamps();
             $table->softDeletes();
         });

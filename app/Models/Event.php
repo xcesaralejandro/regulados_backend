@@ -25,6 +25,8 @@ class Event extends Model
     ];
     protected $hidden = ['deleted_at'];
 
+    protected $casts = ['created_at' => 'datetime:Y-m-d H:i:s', 'updated_at' => 'datetime:Y-m-d H:i:s'];
+
     public function category()
     {
         return $this->belongsTo(EventCategory::class, 'event_category_id', 'id');
