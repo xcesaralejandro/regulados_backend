@@ -13,7 +13,8 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('program_id')->constrained('programs')->cascadeOnDelete()->nullable();
+            $table->unsignedBigInteger('canvas_user_id')->nullable();
+            $table->foreignId('program_id')->nullable()->constrained('programs')->cascadeOnDelete();
             $table->integer('semester')->nullable();
             $table->string('name');
             $table->string('surname')->nullable();
@@ -25,7 +26,6 @@ return new class extends Migration
             $table->text('avatar')->nullable();
             $table->string('access_code', 6)->nullable();
             $table->timestamp('access_code_expires_at')->nullable();
-            $table->foreignId('canvas_user_id')->nullable();
             $table->rememberToken();
             $table->timestamps();
             $table->softDeletes();

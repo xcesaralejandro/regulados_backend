@@ -21,7 +21,6 @@ class UserSeeder extends Seeder
             'custom_gender' => null,
             'semester' => 1,
             'email' => 'c@c.cl',
-            'password' => Hash::make('asd123'),
             'phone' => '123456789',
             'birthdate' => '1995-12-20',
             'program_id' => 1,

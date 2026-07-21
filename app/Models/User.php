@@ -37,14 +37,4 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Program::class, 'program_id', 'id');
     }
-
-    public function points()
-    {
-        return $this->hasMany(UserPoint::class, 'user_id');
-    }
-
-    public function eventParticipations()
-    {
-        return $this->hasMany(EventParticipant::class, 'user_id');
-    }
 }

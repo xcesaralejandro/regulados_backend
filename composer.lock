@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "cb00ba575b4f97a48b6d169a036e1cd8",
+    "content-hash": "5587705f15b26dc8d2bec63140a6c4c0",
     "packages": [
         {
             "name": "brick/math",
@@ -6060,6 +6060,60 @@
                 }
             ],
             "time": "2026-04-26T05:33:54+00:00"
+        },
+        {
+            "name": "xcesaralejandro/canvas-http",
+            "version": "0.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/xcesaralejandro/canvas-http.git",
+                "reference": "d1be2470add0408c1964e0559ae095e0cc1bef9a"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/xcesaralejandro/canvas-http/zipball/d1be2470add0408c1964e0559ae095e0cc1bef9a",
+                "reference": "d1be2470add0408c1964e0559ae095e0cc1bef9a",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/http": "^13.0",
+                "illuminate/support": "^13.0",
+                "laravel/framework": ">=13.0",
+                "php": "^8.3"
+            },
+            "require-dev": {
+                "orchestra/testbench": "^11.1"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "CanvasHttp\\Providers\\CanvasHttpServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "CanvasHttp\\": "src/",
+                    "CanvasHttp\\Http\\": "Http/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "César Alejandro Mora Cid",
+                    "email": "cesar.mcid@gmail.com"
+                }
+            ],
+            "description": "This package provides a simple and consistent way to interact with the Canvas LMS API",
+            "support": {
+                "issues": "https://github.com/xcesaralejandro/canvas-http/issues",
+                "source": "https://github.com/xcesaralejandro/canvas-http/tree/0.1.0"
+            },
+            "time": "2026-07-19T06:16:22+00:00"
         },
         {
             "name": "xcesaralejandro/canvasoauth",
