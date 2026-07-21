@@ -54,7 +54,6 @@ class CanvasOAuthController extends CanvasOAuthControllerBase
 
     public function onError(\Exception $exception): mixed
     {
-        dd($exception);
         return redirect()->away("reguladosapp://canvas?status=error&message=" . $exception->getMessage());
     }
 }
