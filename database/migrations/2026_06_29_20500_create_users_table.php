@@ -13,19 +13,19 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('program_id')->constrained('programs')->cascadeOnDelete();
-            $table->integer('semester');
+            $table->foreignId('program_id')->constrained('programs')->cascadeOnDelete()->nullable();
+            $table->integer('semester')->nullable();
             $table->string('name');
-            $table->string('surname');
-            $table->enum('gender', ['male', 'female', 'other']);
+            $table->string('surname')->nullable();
+            $table->enum('gender', ['male', 'female', 'other'])->nullable();
             $table->string('custom_gender')->nullable();
-            $table->string('email')->unique();
+            $table->string('email')->unique()->nullable();
             $table->integer('phone')->nullable();
-            $table->date('birthdate');
-            $table->string('password')->nullable();
+            $table->date('birthdate')->nullable();
             $table->text('avatar')->nullable();
             $table->string('access_code', 6)->nullable();
             $table->timestamp('access_code_expires_at')->nullable();
+            $table->foreignId('canvas_user_id')->nullable();
             $table->rememberToken();
             $table->timestamps();
             $table->softDeletes();

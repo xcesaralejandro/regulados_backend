@@ -28,9 +28,10 @@ class User extends Authenticatable
         'avatar',
         'access_code',
         'access_code_expires_at',
+        'canvas_user_id'
     ];
 
-    protected $hidden = ['created_at', 'updated_at', 'deleted_at', 'remember_token', 'access_code', 'access_code_expires_at'];
+    protected $hidden = ['created_at', 'updated_at', 'deleted_at', 'remember_token', 'access_code', 'access_code_expires_at', 'canvas_user_id'];
 
     public function program()
     {

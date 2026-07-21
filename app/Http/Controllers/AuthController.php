@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\Auth\RegisterRequest;
+use App\Models\CanvasClient;
 use App\Models\User;
 use App\Services\UserAccessCode;
 use Carbon\Carbon;
@@ -64,5 +65,14 @@ class AuthController extends Controller
         }
         $user->dispatchAccessCodeMail();
         return response()->json(null, 200);
+    }
+
+    public function loginWithCanvas(Request $request)
+    {
+        $request->validate([
+            'code' => 'required'
+        ]);
+        $canvasClient = CanvasClient::where('code', $request->code)->firstOrFail();
+        return redirect()->away($canvasClient->getAuthorizationUrl(), 302);
     }
 }
