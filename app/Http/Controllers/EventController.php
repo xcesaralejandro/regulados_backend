@@ -24,6 +24,8 @@ class EventController extends Controller
             'repeat_code' => null,
         ]);
         $event = Event::create($eventData);
+        $event->participants()->attach(Auth::id(), ['workflow_state' => 'confirmed', 'role' => 'admin']);
+        $event = $event->fresh();
         return response()->json($event, Response::HTTP_CREATED);
     }
 

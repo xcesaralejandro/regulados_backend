@@ -2,8 +2,11 @@
 
 namespace App\Models;
 
+use App\Models\CustomPivots\EventUserMapping;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Event extends Model
@@ -24,6 +27,7 @@ class Event extends Model
         'end_at'
     ];
     protected $hidden = ['deleted_at'];
+    protected $with = ['participants', 'actions'];
 
     protected $casts = ['created_at' => 'datetime:Y-m-d H:i:s', 'updated_at' => 'datetime:Y-m-d H:i:s'];
 
@@ -35,5 +39,19 @@ class Event extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id', 'id');
+    }
+
+    public function participants(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'event_user_mapping')
+            ->using(EventUserMapping::class)
+            ->withPivot(['workflow_state', 'role'])
+            ->withTimestamps()
+            ->whereNull('event_user_mapping.deleted_at');
+    }
+
+    public function actions(): HasMany
+    {
+        return $this->hasMany(EventAction::class, 'event_id');
     }
 }

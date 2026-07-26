@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ContactRequestController;
 use App\Http\Controllers\EventCategoryController;
 use App\Http\Controllers\UniversityController;
 use App\Http\Controllers\EventController;
@@ -34,3 +35,11 @@ Route::apiResource('events', EventController::class)
 Route::post('event-series', [EventSeriesController::class, 'store'])->middleware('auth:sanctum');
 Route::put('event-series/{repeatCode}', [EventSeriesController::class, 'update'])->middleware('auth:sanctum');
 Route::delete('event-series/{repeatCode}', [EventSeriesController::class, 'destroy'])->middleware('auth:sanctum');
+
+Route::apiResource('contact-requests', ContactRequestController::class)
+  ->names([
+    'index' => 'contact_request.index',
+    'store' => 'contact_request.store',
+    'update' => 'contact_request.update',
+    'destroy' => 'contact_request.destroy',
+  ])->middleware('auth:sanctum');

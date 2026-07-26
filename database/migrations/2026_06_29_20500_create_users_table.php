@@ -22,6 +22,8 @@ return new class extends Migration
             $table->string('custom_gender')->nullable();
             $table->string('email')->unique()->nullable();
             $table->integer('phone')->nullable();
+            $table->text('instagram')->nullable();
+            $table->text('discord')->nullable();
             $table->date('birthdate')->nullable();
             $table->text('avatar')->nullable();
             $table->string('access_code', 6)->nullable();
