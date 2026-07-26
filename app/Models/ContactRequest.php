@@ -22,12 +22,12 @@ class ContactRequest extends Model
   ];
 
   protected $casts = [
-    'created_at' => 'datetime',
-    'updated_at' => 'datetime',
-    'deleted_at' => 'datetime',
+    'created_at' => 'datetime:Y-m-d H:i:s',
+    'updated_at' => 'datetime:Y-m-d H:i:s',
+    'deleted_at' => 'datetime:Y-m-d H:i:s',
   ];
 
-  protected $with = ['sender', 'receiver'];
+  protected $hidden = ['deleted_by', 'deleted_at'];
 
   public function scopeBetweenUsers(Builder $query, int $userA, int $userB): Builder
   {
