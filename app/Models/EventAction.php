@@ -23,7 +23,11 @@ class EventAction extends Model
         'completed_at'
     ];
 
-    protected $casts = ['created_at' => 'datetime:Y-m-d H:i:s', 'updated_at' => 'datetime:Y-m-d H:i:s', 'completed_at' => 'datetime:Y-m-d H:i:s'];
+    protected $casts = [
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+        'completed_at' => 'datetime:Y-m-d H:i:s'
+    ];
 
     public function event(): BelongsTo
     {
