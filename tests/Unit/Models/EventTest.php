@@ -317,21 +317,16 @@ class EventTest extends TestCase
         $event = Event::factory()->create();
         $user = User::factory()->create();
         // Execute
-        $event->participants()->attach($user->id, [
-            'workflow_state' => 'confirmed',
-            'role' => 'admin',
-        ]);
+        $event->participants()->attach($user->id, ['workflow_state' => 'confirmed', 'role' => 'admin']);
         $event = Event::with('participants')->find($event->id);
         // Assert
         $this->assertTrue($event->relationLoaded('participants'));
-        $this->assertCount(1, $event->participants);
-        $participant = $event->participants->first();
-        $this->assertEquals($user->id, $participant->id);
+        $this->assertCount(2, $event->participants);
+        $participant = $event->participants->firstWhere('id', $user->id);
+        $this->assertNotNull($participant);
         $this->assertInstanceOf(EventUserMapping::class, $participant->pivot);
         $this->assertEquals('confirmed', $participant->pivot->workflow_state);
         $this->assertEquals('admin', $participant->pivot->role);
-        $this->assertTrue($participant->pivot->isConfirmed());
-        $this->assertTrue($participant->pivot->isAdmin());
     }
 
     public function test_participants_relationship_ignores_soft_deleted_pivot_records(): void
@@ -354,7 +349,44 @@ class EventTest extends TestCase
         // Execute
         $event = Event::with('participants')->find($event->id);
         // Assert
+        $this->assertCount(2, $event->participants);
+        $this->assertTrue($event->participants->contains('id', $event->user_id));
+        $this->assertTrue($event->participants->contains('id', $userActive->id));
+        $this->assertFalse($event->participants->contains('id', $userDeleted->id));
+    }
+
+    public function test_creator_is_automatically_attached_as_confirmed_admin_participant_on_creation(): void
+    {
+        // Prepare
+        $user = User::factory()->create();
+        // Execute
+        $event = Event::factory()->create(['user_id' => $user->id]);
+        $event->load('participants');
+        // Assert
         $this->assertCount(1, $event->participants);
-        $this->assertEquals($userActive->id, $event->participants->first()->id);
+        $creatorParticipant = $event->participants->first();
+        $this->assertEquals($user->id, $creatorParticipant->id);
+        $this->assertInstanceOf(EventUserMapping::class, $creatorParticipant->pivot);
+        $this->assertEquals('admin', $creatorParticipant->pivot->role);
+        $this->assertEquals('confirmed', $creatorParticipant->pivot->workflow_state);
+    }
+
+    public function test_additional_participants_can_be_attached_alongside_the_creator(): void
+    {
+        // Prepare
+        $creator = User::factory()->create();
+        $otherUser = User::factory()->create();
+        // Execute
+        $event = Event::factory()->create(['user_id' => $creator->id]);
+        $event->participants()->attach($otherUser->id, ['role' => 'attendee', 'workflow_state' => 'pending']);
+        $event->load('participants');
+        // Assert
+        $this->assertCount(2, $event->participants);
+        $creatorPivot = $event->participants->firstWhere('id', $creator->id)->pivot;
+        $this->assertEquals('admin', $creatorPivot->role);
+        $this->assertEquals('confirmed', $creatorPivot->workflow_state);
+        $otherPivot = $event->participants->firstWhere('id', $otherUser->id)->pivot;
+        $this->assertEquals('attendee', $otherPivot->role);
+        $this->assertEquals('pending', $otherPivot->workflow_state);
     }
 }

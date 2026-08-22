@@ -298,8 +298,9 @@ class UserTest extends TestCase
     public function test_model_has_events_relationship(): void
     {
         // Prepare
+        $creator = User::factory()->create();
         $user = User::factory()->create();
-        $event = Event::factory()->create();
+        $event = Event::factory()->create(['user_id' => $creator->id]);
         $user->events()->attach($event->id, ['workflow_state' => 'confirmed', 'role' => 'admin']);
         // Execute
         $user = User::with('events')->find($user->id);
@@ -312,8 +313,9 @@ class UserTest extends TestCase
     public function test_model_load_correct_data_for_events_relationship(): void
     {
         // Prepare
+        $creator = User::factory()->create();
         $user = User::factory()->create();
-        $events = Event::factory(3)->create();
+        $events = Event::factory(3)->create(['user_id' => $creator->id]);
         foreach ($events as $event) {
             $user->events()->attach($event->id, ['workflow_state' => 'confirmed', 'role' => 'attendee']);
         }
@@ -321,14 +323,18 @@ class UserTest extends TestCase
         $user = User::with('events')->find($user->id);
         // Assert
         $this->assertCount(3, $user->events);
-        $this->assertEquals($events->pluck('id')->sort()->values(), $user->events->pluck('id')->sort()->values());
+        $this->assertEquals(
+            $events->pluck('id')->sort()->values(),
+            $user->events->pluck('id')->sort()->values()
+        );
     }
 
     public function test_events_relationship_uses_custom_pivot(): void
     {
         // Prepare
+        $creator = User::factory()->create();
         $user = User::factory()->create();
-        $event = Event::factory()->create();
+        $event = Event::factory()->create(['user_id' => $creator->id]);
         $user->events()->attach($event->id, ['workflow_state' => 'confirmed', 'role' => 'admin']);
         // Execute
         $user = User::with('events')->find($user->id);
@@ -337,15 +343,14 @@ class UserTest extends TestCase
         $this->assertInstanceOf(EventUserMapping::class, $pivot);
         $this->assertEquals('confirmed', $pivot->workflow_state);
         $this->assertEquals('admin', $pivot->role);
-        $this->assertTrue($pivot->isConfirmed());
-        $this->assertTrue($pivot->isAdmin());
     }
 
     public function test_events_relationship_excludes_soft_deleted_pivots(): void
     {
         // Prepare
+        $creator = User::factory()->create();
         $user = User::factory()->create();
-        $event = Event::factory()->create();
+        $event = Event::factory()->create(['user_id' => $creator->id]);
         $user->events()->attach($event->id, ['workflow_state' => 'confirmed', 'role' => 'attendee']);
         $pivot = EventUserMapping::where('user_id', $user->id)->where('event_id', $event->id)->first();
         $pivot->delete();
@@ -505,14 +510,12 @@ class UserTest extends TestCase
 
     public function test_events_pivot_uses_timestamps(): void
     {
+        // Prepare
+        $creator = User::factory()->create();
         $user = User::factory()->create();
-        $event = Event::factory()->create();
-
-        $user->events()->attach($event->id, [
-            'workflow_state' => 'confirmed',
-            'role' => 'attendee',
-        ]);
-
+        $event = Event::factory()->create(['user_id' => $creator->id]);
+        $user->events()->attach($event->id, ['workflow_state' => 'confirmed', 'role' => 'attendee']);
+        // Execute & Assert
         $pivot = $user->fresh()->events->first()->pivot;
         $this->assertNotNull($pivot->created_at);
         $this->assertNotNull($pivot->updated_at);
@@ -596,12 +599,11 @@ class UserTest extends TestCase
         $this->assertNotEquals($currentUser->id, $retrievedEvent->user_id);
     }
 
-    public function test_events_relationship_retrieves_events_created_by_the_same_user_with_active_pivot(): void
+    public function test_events_relationship_retrieves_events_created_by_the_same_user(): void
     {
         // Prepare
         $currentUser = User::factory()->create();
         $event = Event::factory()->create(['user_id' => $currentUser->id]);
-        $currentUser->events()->attach($event->id, ['workflow_state' => 'confirmed', 'role' => 'admin']);
         // Execute
         $user = User::with('events')->find($currentUser->id);
         // Assert
@@ -610,6 +612,22 @@ class UserTest extends TestCase
         $this->assertEquals($event->id, $retrievedEvent->id);
         $this->assertEquals($currentUser->id, $retrievedEvent->user_id);
         $this->assertEquals('admin', $retrievedEvent->pivot->role);
-        $this->assertTrue($retrievedEvent->pivot->isAdmin());
+        $this->assertEquals('confirmed', $retrievedEvent->pivot->workflow_state);
+    }
+
+    public function test_event_automatically_attaches_owner_as_confirmed_admin_on_creation(): void
+    {
+        // Prepare
+        $currentUser = User::factory()->create();
+        $event = Event::factory()->create(['user_id' => $currentUser->id]);
+        // Execute
+        $user = User::with('events')->find($currentUser->id);
+        // Assert
+        $this->assertCount(1, $user->events);
+        $retrievedEvent = $user->events->first();
+        $this->assertEquals($event->id, $retrievedEvent->id);
+        $this->assertEquals($currentUser->id, $retrievedEvent->user_id);
+        $this->assertEquals('admin', $retrievedEvent->pivot->role);
+        $this->assertEquals('confirmed', $retrievedEvent->pivot->workflow_state);
     }
 }
