@@ -526,4 +526,90 @@ class UserTest extends TestCase
         $this->assertNotNull($token->plainTextToken);
         $this->assertCount(1, $user->tokens);
     }
+
+    public function test_user_can_retrieve_pivot_event_when_workflow_state_is_declined(): void
+    {
+        // Prepare
+        $creator = User::factory()->create();
+        $targetUser = User::factory()->create();
+        $event = Event::factory()->create(['user_id' => $creator->id]);
+        $targetUser->events()->attach($event->id, ['workflow_state' => 'declined', 'role' => 'attendee']);
+        // Execute
+        $user = User::with('events')->find($targetUser->id);
+        // Assert
+        $this->assertCount(1, $user->events);
+        $retrievedEvent = $user->events->first();
+        $this->assertEquals($event->id, $retrievedEvent->id);
+        $this->assertEquals('declined', $retrievedEvent->pivot->workflow_state);
+        $this->assertEquals('attendee', $retrievedEvent->pivot->role);
+    }
+
+    public function test_user_can_retrieve_pivot_event_when_workflow_state_is_confirmed(): void
+    {
+        // Prepare
+        $creator = User::factory()->create();
+        $targetUser = User::factory()->create();
+        $event = Event::factory()->create(['user_id' => $creator->id]);
+        $targetUser->events()->attach($event->id, ['workflow_state' => 'confirmed', 'role' => 'attendee']);
+        // Execute
+        $user = User::with('events')->find($targetUser->id);
+        // Assert
+        $this->assertCount(1, $user->events);
+        $retrievedEvent = $user->events->first();
+        $this->assertEquals($event->id, $retrievedEvent->id);
+        $this->assertEquals('confirmed', $retrievedEvent->pivot->workflow_state);
+        $this->assertEquals('attendee', $retrievedEvent->pivot->role);
+        $this->assertTrue($retrievedEvent->pivot->isConfirmed());
+    }
+
+    public function test_user_can_retrieve_pivot_event_when_workflow_state_is_pending(): void
+    {
+        // Prepare
+        $creator = User::factory()->create();
+        $targetUser = User::factory()->create();
+        $event = Event::factory()->create(['user_id' => $creator->id]);
+        $targetUser->events()->attach($event->id, ['workflow_state' => 'pending', 'role' => 'attendee']);
+        // Execute
+        $user = User::with('events')->find($targetUser->id);
+        // Assert
+        $this->assertCount(1, $user->events);
+        $retrievedEvent = $user->events->first();
+        $this->assertEquals($event->id, $retrievedEvent->id);
+        $this->assertEquals('pending', $retrievedEvent->pivot->workflow_state);
+        $this->assertEquals('attendee', $retrievedEvent->pivot->role);
+    }
+
+    public function test_events_relationship_retrieves_events_created_by_another_user_and_current_user_is_enrolled(): void
+    {
+        // Prepare
+        $anotherUser = User::factory()->create();
+        $currentUser = User::factory()->create();
+        $event = Event::factory()->create(['user_id' => $anotherUser->id]);
+        $currentUser->events()->attach($event->id, ['workflow_state' => 'confirmed', 'role' => 'attendee']);
+        // Execute
+        $user = User::with('events')->find($currentUser->id);
+        // Assert
+        $this->assertCount(1, $user->events);
+        $retrievedEvent = $user->events->first();
+        $this->assertEquals($event->id, $retrievedEvent->id);
+        $this->assertEquals($anotherUser->id, $retrievedEvent->user_id);
+        $this->assertNotEquals($currentUser->id, $retrievedEvent->user_id);
+    }
+
+    public function test_events_relationship_retrieves_events_created_by_the_same_user_with_active_pivot(): void
+    {
+        // Prepare
+        $currentUser = User::factory()->create();
+        $event = Event::factory()->create(['user_id' => $currentUser->id]);
+        $currentUser->events()->attach($event->id, ['workflow_state' => 'confirmed', 'role' => 'admin']);
+        // Execute
+        $user = User::with('events')->find($currentUser->id);
+        // Assert
+        $this->assertCount(1, $user->events);
+        $retrievedEvent = $user->events->first();
+        $this->assertEquals($event->id, $retrievedEvent->id);
+        $this->assertEquals($currentUser->id, $retrievedEvent->user_id);
+        $this->assertEquals('admin', $retrievedEvent->pivot->role);
+        $this->assertTrue($retrievedEvent->pivot->isAdmin());
+    }
 }
