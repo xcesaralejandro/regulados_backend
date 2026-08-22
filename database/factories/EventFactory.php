@@ -28,8 +28,8 @@ class EventFactory extends Factory
             'location' => $this->faker->optional()->address(),
             'notes' => $this->faker->optional()->text(),
             'visibility' => $this->faker->randomElement(['public', 'contacts', 'private']),
-            'start_at' => $this->faker->dateTime(),
-            'end_at' => $this->faker->optional()->dateTime(),
+            'start_at' => $this->faker->dateTimeBetween('-1 month', '+1 month'),
+            'end_at' => $this->faker->dateTimeBetween('+1 month', '+2 months'),
         ];
     }
 }

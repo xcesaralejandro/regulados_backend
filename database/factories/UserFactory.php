@@ -24,8 +24,12 @@ class UserFactory extends Factory
             'email' => $this->faker->unique()->safeEmail(),
             'phone' => $this->faker->optional()->randomNumber(9, true),
             'birthdate' => $this->faker->date(),
-            'password' => $this->faker->optional()->password(),
             'avatar' => $this->faker->optional()->imageUrl(),
+            'canvas_user_id' => $this->faker->optional()->numberBetween(1, 1000000),
+            'access_code' => $this->faker->optional()->lexify('??????'),
+            'instagram' => $this->faker->optional()->userName(),
+            'discord' => $this->faker->optional()->userName(),
+            'access_code_expires_at' => $this->faker->optional()->dateTime(),
         ];
     }
 }

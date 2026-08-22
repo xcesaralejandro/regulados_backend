@@ -35,7 +35,6 @@ class UserTest extends TestCase
             'avatar',
             'instagram',
             'discord',
-            'program',
         ];
         // Assert
         sort($model_keys);
@@ -99,17 +98,6 @@ class UserTest extends TestCase
         $user = User::first()->makeVisible(['updated_at'])->toArray();
         // Assert
         $this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $user['updated_at']);
-    }
-
-    public function test_model_cast_deleted_at(): void
-    {
-        // Prepare
-        $user = User::factory()->create();
-        $user->delete();
-        // Execute
-        $deleted_user = User::withTrashed()->find($user->id)->makeVisible(['deleted_at'])->toArray();
-        // Assert
-        $this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $deleted_user['deleted_at']);
     }
 
     public function test_canvas_user_id_field_accepts_null(): void

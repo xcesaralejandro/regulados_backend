@@ -18,7 +18,7 @@ class UniversityFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => $this->faker->university(),
+            'name' => $this->faker->sentence(),
             'short_name' => $this->faker->lexify('???'),
             'canvas_domain_url' => $this->faker->optional()->url(),
             'canvas_client_id' => $this->faker->optional()->numerify('#####'),
