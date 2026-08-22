@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\CustomPivots\EventUserMapping;
 use App\Traits\HasAccessCode;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -44,7 +45,7 @@ class User extends Authenticatable
 
     protected $hidden = ['created_at', 'updated_at', 'deleted_at', 'remember_token', 'access_code', 'access_code_expires_at', 'canvas_user_id'];
 
-    public function program()
+    public function program(): BelongsTo
     {
         return $this->belongsTo(Program::class, 'program_id', 'id');
     }

@@ -363,10 +363,29 @@ class UserTest extends TestCase
         $relation = $user->events();
         // Assert
         $this->assertInstanceOf(BelongsToMany::class, $relation);
-        $this->assertInstanceOf(EventUserMapping::class, $relation->newPivot());
         $this->assertEquals('event_user_mapping', $relation->getTable());
         $this->assertEquals('user_id', $relation->getForeignPivotKeyName());
         $this->assertEquals('event_id', $relation->getRelatedPivotKeyName());
+        $this->assertEquals(Event::class, get_class($relation->getRelated()));
+        $this->assertEquals(EventUserMapping::class, $relation->getPivotClass());
+        $this->assertContains('workflow_state', $relation->getPivotColumns());
+        $this->assertContains('role', $relation->getPivotColumns());
+    }
+
+    public function test_events_pivot_implements_soft_deletes(): void
+    {
+        // Prepare
+        $user = User::factory()->create();
+        $event = Event::factory()->create();
+        $user->events()->attach($event->id, ['workflow_state' => 'confirmed', 'role' => 'attendee']);
+        $pivot = EventUserMapping::where('user_id', $user->id)->where('event_id', $event->id)->first();
+        // Execute
+        $pivot->delete();
+        // Assert
+        $this->assertSoftDeleted('event_user_mapping', ['user_id' => $user->id, 'event_id' => $event->id]);
+        $this->assertNull(EventUserMapping::where('user_id', $user->id)->where('event_id', $event->id)->first());
+        $this->assertNotNull(EventUserMapping::withTrashed()->where('user_id', $user->id)->where('event_id', $event->id)->first());
+        $this->assertNotNull(EventUserMapping::withTrashed()->where('user_id', $user->id)->where('event_id', $event->id)->first());
     }
 
     public function test_model_has_sent_contact_requests_relationship(): void
