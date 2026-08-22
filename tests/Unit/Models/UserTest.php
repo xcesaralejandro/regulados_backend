@@ -474,4 +474,37 @@ class UserTest extends TestCase
         // Assert
         $this->assertEquals('users', $table);
     }
+
+    public function test_default_eager_loaded_program_and_university_relations(): void
+    {
+        $program = Program::factory()->hasUniversity()->create();
+        $user = User::factory()->create(['program_id' => $program->id]);
+        $retrieved = User::find($user->id);
+        $this->assertTrue($retrieved->relationLoaded('program'));
+        $this->assertTrue($retrieved->program->relationLoaded('university'));
+    }
+
+    public function test_events_pivot_uses_timestamps(): void
+    {
+        $user = User::factory()->create();
+        $event = Event::factory()->create();
+
+        $user->events()->attach($event->id, [
+            'workflow_state' => 'confirmed',
+            'role' => 'attendee',
+        ]);
+
+        $pivot = $user->fresh()->events->first()->pivot;
+        $this->assertNotNull($pivot->created_at);
+        $this->assertNotNull($pivot->updated_at);
+    }
+
+    public function test_user_uses_has_api_tokens_trait(): void
+    {
+        $user = User::factory()->create();
+        $token = $user->createToken('test-token');
+
+        $this->assertNotNull($token->plainTextToken);
+        $this->assertCount(1, $user->tokens);
+    }
 }

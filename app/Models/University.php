@@ -13,6 +13,10 @@ class University extends Model
     protected $table = 'universities';
     protected $fillable = ['name', 'short_name', 'canvas_domain_url', 'canvas_client_id', 'canvas_client_secret'];
     protected $hidden = ['created_at', 'updated_at', 'deleted_at', 'canvas_domain_url', 'canvas_client_id', 'canvas_client_secret'];
+    protected $casts = [
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+    ];
 
     public function programs()
     {

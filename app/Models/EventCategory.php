@@ -13,6 +13,10 @@ class EventCategory extends Model
     protected $table = 'event_categories';
     protected $fillable = ['name', 'description', 'icon', 'text_color', 'background_color'];
     protected $hidden = ['created_at', 'updated_at', 'deleted_at'];
+    protected $casts = [
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+    ];
 
     public function events()
     {
