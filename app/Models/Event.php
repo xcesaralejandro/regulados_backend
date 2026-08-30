@@ -26,7 +26,7 @@ class Event extends Model
         'start_at',
         'end_at'
     ];
-    protected $hidden = ['deleted_at'];
+    protected $hidden = ['user_id', 'event_category_id', 'deleted_at'];
     protected $with = ['participants', 'actions'];
 
     protected $casts = ['created_at' => 'datetime:Y-m-d H:i:s', 'updated_at' => 'datetime:Y-m-d H:i:s'];

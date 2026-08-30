@@ -14,7 +14,7 @@ class ProgramTest extends TestCase
     {
         // Prepare
         $model_keys = array_keys(Program::factory()->create()->toArray());
-        $visible_keys = ['id', 'university_id', 'name'];
+        $visible_keys = ['id', 'name'];
         // Assert
         sort($model_keys);
         sort($visible_keys);
@@ -25,7 +25,7 @@ class ProgramTest extends TestCase
     {
         // Prepare
         $model_keys = array_keys(Program::factory()->create()->toArray());
-        $hidden_keys = ['created_at', 'updated_at', 'deleted_at'];
+        $hidden_keys = ['university_id', 'created_at', 'updated_at', 'deleted_at'];
         // Assert
         $this->assertEmpty(array_intersect($hidden_keys, $model_keys));
     }

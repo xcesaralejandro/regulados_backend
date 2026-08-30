@@ -16,8 +16,7 @@ Route::prefix('auth')->group(function () {
 });
 
 Route::apiResource('universities', UniversityController::class)
-  ->names(['index' => 'university.index'])
-  ->middleware('auth:sanctum');
+  ->names(['index' => 'university.index']);
 
 Route::apiResource('event-categories', EventCategoryController::class)
   ->names(['index' => 'event-categories.index'])

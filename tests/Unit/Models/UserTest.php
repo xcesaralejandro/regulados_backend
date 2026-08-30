@@ -25,13 +25,10 @@ class UserTest extends TestCase
             'id',
             'name',
             'surname',
-            'gender',
-            'custom_gender',
             'semester',
             'email',
             'phone',
             'birthdate',
-            'program_id',
             'avatar',
             'instagram',
             'discord',
@@ -46,7 +43,18 @@ class UserTest extends TestCase
     {
         // Prepare
         $model_keys = array_keys(User::factory()->create()->toArray());
-        $hidden_keys = ['created_at', 'updated_at', 'deleted_at', 'remember_token', 'access_code', 'access_code_expires_at', 'canvas_user_id'];
+        $hidden_keys = [
+            'gender',
+            'custom_gender',
+            'program_id',
+            'created_at',
+            'updated_at',
+            'deleted_at',
+            'remember_token',
+            'access_code',
+            'access_code_expires_at',
+            'canvas_user_id'
+        ];
         // Assert
         $this->assertEmpty(array_intersect($hidden_keys, $model_keys));
     }

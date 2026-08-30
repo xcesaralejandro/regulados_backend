@@ -25,7 +25,7 @@ class EventUserMapping extends Pivot
     'deleted_at' => 'datetime',
   ];
 
-  protected $hidden = ['created_at', 'updated_at', 'deleted_at'];
+  protected $hidden = ['user_id', 'event_id', 'created_at', 'updated_at', 'deleted_at'];
 
   public function isConfirmed(): bool
   {

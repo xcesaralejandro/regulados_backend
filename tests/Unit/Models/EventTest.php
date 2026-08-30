@@ -20,8 +20,6 @@ class EventTest extends TestCase
         $modelKeys = array_keys(Event::factory()->create()->toArray());
         $visibleKeys = [
             'id',
-            'user_id',
-            'event_category_id',
             'repeat_code',
             'title',
             'description',
@@ -43,7 +41,7 @@ class EventTest extends TestCase
     {
         // Prepare
         $modelKeys = array_keys(Event::factory()->create()->toArray());
-        $hiddenKeys = ['deleted_at'];
+        $hiddenKeys = ['user_id', 'event_category_id', 'deleted_at'];
         // Assert
         $this->assertEmpty(array_intersect($hiddenKeys, $modelKeys));
     }

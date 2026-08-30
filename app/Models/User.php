@@ -43,7 +43,18 @@ class User extends Authenticatable
 
     protected $with = ['program.university'];
 
-    protected $hidden = ['created_at', 'updated_at', 'deleted_at', 'remember_token', 'access_code', 'access_code_expires_at', 'canvas_user_id'];
+    protected $hidden = [
+        'gender',
+        'custom_gender',
+        'program_id',
+        'created_at',
+        'updated_at',
+        'deleted_at',
+        'remember_token',
+        'access_code',
+        'access_code_expires_at',
+        'canvas_user_id'
+    ];
 
     public function program(): BelongsTo
     {

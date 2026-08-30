@@ -29,6 +29,8 @@ class EventAction extends Model
         'completed_at' => 'datetime:Y-m-d H:i:s'
     ];
 
+    protected $hidden = ['deleted_at', 'completed_by', 'updated_at', 'event_id', 'user_id'];
+
     public function event(): BelongsTo
     {
         return $this->belongsTo(Event::class, 'event_id', 'id');
