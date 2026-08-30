@@ -38,7 +38,7 @@ class EventSeriesController extends Controller
             ->where('user_id', Auth::id())
             ->get();
         if ($events->isEmpty()) {
-            return response()->json(null, Response::HTTP_FORBIDDEN);
+            return response()->json(null, Response::HTTP_NOT_FOUND);
         }
         $new_values = $request->validated();
         if ($request->has(['start_at', 'end_at'])) {
