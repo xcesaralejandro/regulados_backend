@@ -18,8 +18,6 @@ class ContactRequestTest extends TestCase
         $model_keys = array_keys(ContactRequest::factory()->create()->toArray());
         $visible_keys = [
             'id',
-            'sender_id',
-            'receiver_id',
             'workflow_state',
             'created_at',
             'updated_at',
@@ -34,7 +32,7 @@ class ContactRequestTest extends TestCase
     {
         // Prepare
         $model_keys = array_keys(ContactRequest::factory()->create()->toArray());
-        $hidden_keys = ['deleted_by', 'deleted_at'];
+        $hidden_keys = ['sender_id', 'receiver_id', 'deleted_by', 'deleted_at'];
         // Assert
         $this->assertEmpty(array_intersect($hidden_keys, $model_keys));
     }

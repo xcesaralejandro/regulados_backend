@@ -10,6 +10,17 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ContactRequestController extends Controller
 {
+
+    private function formatContactRequest(ContactRequest $contactRequest, int $userId): ContactRequest
+    {
+        $isSent = $contactRequest->sender_id === $userId;
+        $contactRequest->setAttribute('direction', $isSent ? 'sent' : 'received');
+        $contactRequest->setRelation('user', $isSent ? $contactRequest->receiver : $contactRequest->sender);
+        $contactRequest->unsetRelation('sender');
+        $contactRequest->unsetRelation('receiver');
+        return $contactRequest;
+    }
+
     public function index(Request $request)
     {
         $request->validate(['workflow_state' => 'sometimes|in:pending,accepted,rejected']);
@@ -25,34 +36,35 @@ class ContactRequestController extends Controller
             )
             ->with(['sender', 'receiver'])
             ->get();
-        $requests->each(function (ContactRequest $contactRequest) use ($user) {
-            $isSent = $contactRequest->sender_id === $user->id;
-            $contactRequest->setAttribute('direction', $isSent ? 'sent' : 'received');
-            $contactRequest->setRelation('user', $isSent ? $contactRequest->receiver : $contactRequest->sender);
-            $contactRequest->unsetRelation('sender');
-            $contactRequest->unsetRelation('receiver');
-        });
+        $requests->each(fn(ContactRequest $contactRequest) => $this->formatContactRequest($contactRequest, $user->id));
         return response()->json($requests, Response::HTTP_OK);
     }
 
     public function store(StoreContactRequest $request)
     {
         $user = $request->user();
-        $receiver_id = $request->integer('receiver_id');
-        $existing_request = ContactRequest::betweenUsers($user->id, $receiver_id)->first();
-        if ($existing_request) {
-            if ($existing_request->receiver_id === $user->id && $existing_request->workflow_state === 'pending') {
-                $existing_request->update(['workflow_state' => 'accepted']);
-                return response()->json($existing_request->fresh(), Response::HTTP_OK);
+        $receiverId = $request->integer('receiver_id');
+        $existingRequest = ContactRequest::betweenUsers($user->id, $receiverId)->first();
+        if ($existingRequest) {
+            if ($existingRequest->receiver_id === $user->id && $existingRequest->workflow_state === 'pending') {
+                $existingRequest->update(['workflow_state' => 'accepted']);
             }
-            return response()->json($existing_request->fresh(), Response::HTTP_OK);
+            $existingRequest->load(['sender', 'receiver']);
+            return response()->json(
+                $this->formatContactRequest($existingRequest, $user->id),
+                Response::HTTP_OK
+            );
         }
-        $contact_request = ContactRequest::create([
+        $contactRequest = ContactRequest::create([
             'sender_id'      => $user->id,
-            'receiver_id'    => $receiver_id,
+            'receiver_id'    => $receiverId,
             'workflow_state' => 'pending',
         ]);
-        return response()->json($contact_request->fresh(), Response::HTTP_CREATED);
+        $contactRequest->load(['sender', 'receiver']);
+        return response()->json(
+            $this->formatContactRequest($contactRequest, $user->id),
+            Response::HTTP_CREATED
+        );
     }
 
     public function update(Request $request, int $sender_id)
@@ -61,14 +73,16 @@ class ContactRequestController extends Controller
         $sender = User::findOrFail($sender_id);
         $user = $request->user();
         $new_state = $request->input('workflow_state');
-        $contact_request = ContactRequest::fromTo($sender->id, $user->id)
-            ->where('workflow_state', 'pending')
-            ->first();
+        $contact_request = ContactRequest::fromTo($sender->id, $user->id)->first();
         if (!$contact_request) {
             return response()->json(null, Response::HTTP_NOT_FOUND);
         }
         $contact_request->update(['workflow_state' => $new_state]);
-        return response()->json($contact_request->fresh(), Response::HTTP_OK);
+        $contact_request->load(['sender', 'receiver']);
+        return response()->json(
+            $this->formatContactRequest($contact_request, $user->id),
+            Response::HTTP_OK
+        );
     }
 
     public function destroy(Request $request, int $contactId)
