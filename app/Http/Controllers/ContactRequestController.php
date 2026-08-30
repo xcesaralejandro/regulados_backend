@@ -12,24 +12,26 @@ class ContactRequestController extends Controller
 {
     public function index(Request $request)
     {
-        $request->validate([
-            'workflow_state' => 'sometimes|in:pending,accepted,rejected'
-        ]);
+        $request->validate(['workflow_state' => 'sometimes|in:pending,accepted,rejected']);
         $user = $request->user();
-        $state = $request->query('workflow_state');
-        $sentQuery = $user->sentContactRequests()
-            ->select('contact_requests.*')
-            ->selectRaw("'sent' as direction")
-            ->with('receiver');
-        $receivedQuery = $user->receivedContactRequests()
-            ->select('contact_requests.*')
-            ->selectRaw("'received' as direction")
-            ->with('sender');
-        if ($state) {
-            $sentQuery->where('workflow_state', $state);
-            $receivedQuery->where('workflow_state', $state);
-        }
-        $requests = $sentQuery->unionAll($receivedQuery)->get();
+        $requests = ContactRequest::query()
+            ->where(function ($query) use ($user) {
+                $query->where('sender_id', $user->id)
+                    ->orWhere('receiver_id', $user->id);
+            })
+            ->when(
+                $request->query('workflow_state'),
+                fn($query, $state) => $query->where('workflow_state', $state)
+            )
+            ->with(['sender', 'receiver'])
+            ->get();
+        $requests->each(function (ContactRequest $contactRequest) use ($user) {
+            $isSent = $contactRequest->sender_id === $user->id;
+            $contactRequest->setAttribute('direction', $isSent ? 'sent' : 'received');
+            $contactRequest->setRelation('user', $isSent ? $contactRequest->receiver : $contactRequest->sender);
+            $contactRequest->unsetRelation('sender');
+            $contactRequest->unsetRelation('receiver');
+        });
         return response()->json($requests, Response::HTTP_OK);
     }
 

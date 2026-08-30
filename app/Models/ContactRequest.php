@@ -27,7 +27,7 @@ class ContactRequest extends Model
     'deleted_at' => 'datetime:Y-m-d H:i:s',
   ];
 
-  protected $hidden = ['deleted_by', 'deleted_at'];
+  protected $hidden = ['sender_id', 'receiver_id', 'deleted_by', 'deleted_at'];
 
   public function scopeBetweenUsers(Builder $query, int $userA, int $userB): Builder
   {

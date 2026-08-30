@@ -72,11 +72,11 @@ class User extends Authenticatable
 
     public function sentContactRequests(): HasMany
     {
-        return $this->hasMany(ContactRequest::class, 'sender_id');
+        return $this->hasMany(ContactRequest::class, 'sender_id', 'id');
     }
 
     public function receivedContactRequests(): HasMany
     {
-        return $this->hasMany(ContactRequest::class, 'receiver_id');
+        return $this->hasMany(ContactRequest::class, 'receiver_id', 'id');
     }
 }
