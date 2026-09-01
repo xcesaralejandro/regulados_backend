@@ -20,7 +20,8 @@ class EventAction extends Model
         'description',
         'order',
         'completed_by',
-        'completed_at'
+        'completed_at',
+        'source'
     ];
 
     protected $casts = [

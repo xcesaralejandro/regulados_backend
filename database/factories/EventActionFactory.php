@@ -28,6 +28,7 @@ class EventActionFactory extends Factory
             'order' => $this->faker->numberBetween(1, 100),
             'completed_by' => $user,
             'completed_at' => $this->faker->optional()->dateTimeBetween('-1 month', '+1 month'),
+            'source' => $this->faker->randomElement(["ai", "user"]),
         ];
     }
 }

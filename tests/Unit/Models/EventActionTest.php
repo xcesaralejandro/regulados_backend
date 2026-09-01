@@ -15,7 +15,7 @@ class EventActionTest extends TestCase
     {
         // Prepare
         $modelKeys = array_keys(EventAction::factory()->create()->toArray());
-        $visibleKeys = ['id', 'title', 'description', 'order', 'completed_at', 'created_at'];
+        $visibleKeys = ['id', 'title', 'description', 'order', 'completed_at', 'created_at', 'source'];
         // Assert
         sort($modelKeys);
         sort($visibleKeys);
@@ -43,6 +43,7 @@ class EventActionTest extends TestCase
             'order',
             'completed_by',
             'completed_at',
+            'source'
         ];
         // Execute
         $fillable = $model->getFillable();

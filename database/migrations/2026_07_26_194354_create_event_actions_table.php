@@ -20,6 +20,7 @@ return new class extends Migration
             $table->integer('order')->default(0);
             $table->foreignId('completed_by')->nullable()->constrained('users')->cascadeOnDelete();
             $table->timestamp('completed_at')->nullable();
+            $table->enum("source", ["ai", "user"])->default('user');
             $table->timestamps();
             $table->softDeletes();
         });
