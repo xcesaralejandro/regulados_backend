@@ -25,6 +25,7 @@ return new class extends Migration
             $table->text('instagram')->nullable();
             $table->text('discord')->nullable();
             $table->date('birthdate')->nullable();
+            $table->integer('preferred_start_time')->default(7);
             $table->text('avatar')->nullable();
             $table->string('access_code', 6)->nullable();
             $table->timestamp('access_code_expires_at')->nullable();
