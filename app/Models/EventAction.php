@@ -30,7 +30,7 @@ class EventAction extends Model
         'completed_at' => 'datetime:Y-m-d H:i:s'
     ];
 
-    protected $hidden = ['deleted_at', 'completed_by', 'updated_at', 'event_id', 'user_id'];
+    protected $hidden = ['deleted_at', 'completed_by', 'event_id', 'user_id'];
 
     public function event(): BelongsTo
     {

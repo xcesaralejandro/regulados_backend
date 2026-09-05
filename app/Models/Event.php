@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Builder;
 
 class Event extends Model
 {
@@ -53,5 +54,12 @@ class Event extends Model
     public function actions(): HasMany
     {
         return $this->hasMany(EventAction::class, 'event_id');
+    }
+
+    public function scopewhereParticipant(Builder $query, int $user_id): Builder
+    {
+        return $query->whereHas('participants', function (Builder $q) use ($user_id) {
+            $q->where('event_user_mapping.user_id', $user_id);
+        });
     }
 }

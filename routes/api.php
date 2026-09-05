@@ -6,6 +6,7 @@ use App\Http\Controllers\EventCategoryController;
 use App\Http\Controllers\UniversityController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventSeriesController;
+use App\Http\Controllers\EventActionController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function () {
@@ -41,4 +42,13 @@ Route::apiResource('contact-requests', ContactRequestController::class)
     'store' => 'contact_request.store',
     'update' => 'contact_request.update',
     'destroy' => 'contact_request.destroy',
+  ])->middleware('auth:sanctum');
+
+
+Route::apiResource('event-actions', EventActionController::class)
+  ->names([
+    'index' => 'event_action.index',
+    'store' => 'event_action.store',
+    'update' => 'event_action.update',
+    'destroy' => 'event_action.destroy',
   ])->middleware('auth:sanctum');

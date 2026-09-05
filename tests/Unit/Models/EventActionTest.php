@@ -15,7 +15,7 @@ class EventActionTest extends TestCase
     {
         // Prepare
         $modelKeys = array_keys(EventAction::factory()->create()->toArray());
-        $visibleKeys = ['id', 'title', 'description', 'order', 'completed_at', 'created_at', 'source'];
+        $visibleKeys = ['id', 'title', 'description', 'order', 'completed_at', 'created_at', 'source', 'updated_at'];
         // Assert
         sort($modelKeys);
         sort($visibleKeys);
@@ -26,7 +26,7 @@ class EventActionTest extends TestCase
     {
         // Prepare
         $modelKeys = array_keys(EventAction::factory()->create()->toArray());
-        $hiddenKeys = ['deleted_at', 'completed_by', 'updated_at', 'event_id', 'user_id'];
+        $hiddenKeys = ['deleted_at', 'completed_by', 'event_id', 'user_id'];
         // Assert
         $this->assertEmpty(array_intersect($hiddenKeys, $modelKeys));
     }
