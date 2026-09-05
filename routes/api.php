@@ -7,6 +7,7 @@ use App\Http\Controllers\UniversityController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventSeriesController;
 use App\Http\Controllers\EventActionController;
+use App\Http\Controllers\EventParticipationController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function () {
@@ -23,6 +24,8 @@ Route::apiResource('event-categories', EventCategoryController::class)
   ->names(['index' => 'event-categories.index'])
   ->middleware('auth:sanctum');
 
+Route::get('events/feed', [EventController::class, 'feed'])->middleware('auth:sanctum')->name('events.feed');
+
 Route::apiResource('events', EventController::class)
   ->names([
     'index' => 'event.index',
@@ -30,7 +33,6 @@ Route::apiResource('events', EventController::class)
     'update' => 'event.update',
     'destroy' => 'event.destroy',
   ])->middleware('auth:sanctum');
-
 
 Route::post('event-series', [EventSeriesController::class, 'store'])->middleware('auth:sanctum');
 Route::put('event-series/{repeatCode}', [EventSeriesController::class, 'update'])->middleware('auth:sanctum');
@@ -52,3 +54,9 @@ Route::apiResource('event-actions', EventActionController::class)
     'update' => 'event_action.update',
     'destroy' => 'event_action.destroy',
   ])->middleware('auth:sanctum');
+
+Route::post('admin/event-participations/{event_id}/users/{user_id}', [EventParticipationController::class, 'addParticipant'])->middleware('auth:sanctum');
+Route::delete('admin/event-participations/{event_id}/users/{user_id}', [EventParticipationController::class, 'removeParticipant'])->middleware('auth:sanctum');
+Route::post('event-participations', [EventParticipationController::class, 'store'])->middleware('auth:sanctum');
+Route::put('event-participations', [EventParticipationController::class, 'update'])->middleware('auth:sanctum');
+Route::delete('event-participations', [EventParticipationController::class, 'destroy'])->middleware('auth:sanctum');

@@ -60,4 +60,39 @@ class EventController extends Controller
         $event->delete();
         return response()->json(null, Response::HTTP_NO_CONTENT);
     }
+
+    public function feed(Request $request)
+    {
+        $validated = $request->validate([
+            'from' => ['nullable', 'date_format:Y-m-d'],
+            'to'   => ['nullable', 'date_format:Y-m-d', 'after_or_equal:from'],
+        ]);
+        $user = $request->user();
+        $contact_ids = $user->getContactIds();
+        $base_query = Event::query()
+            ->with('category')
+            ->when($validated['from'] ?? null, function ($query, $from) {
+                $query->where('start_at', '>=', Carbon::parse($from)->startOfDay());
+            })
+            ->when($validated['to'] ?? null, function ($query, $to) {
+                $query->where('start_at', '<=', Carbon::parse($to)->endOfDay());
+            })
+            ->whereDoesntHave('participants', function ($query) use ($user) {
+                $query->where('event_user_mapping.user_id', $user->id);
+            });
+        $public_events = (clone $base_query)
+            ->where('visibility', 'public')
+            ->where('user_id', '!=', $user->id)
+            ->get();
+        $contact_events = empty($contact_ids)
+            ? collect([])
+            : (clone $base_query)
+            ->where('visibility', 'contacts')
+            ->whereIn('user_id', $contact_ids)
+            ->get();
+        return response()->json([
+            'public_events'  => $public_events,
+            'contact_events' => $contact_events,
+        ], Response::HTTP_OK);
+    }
 }

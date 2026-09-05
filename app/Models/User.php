@@ -79,4 +79,15 @@ class User extends Authenticatable
     {
         return $this->hasMany(ContactRequest::class, 'receiver_id', 'id');
     }
+
+    public function getContactIds(): array
+    {
+        $sent = $this->sentContactRequests()
+            ->where('workflow_state', 'accepted')
+            ->pluck('receiver_id');
+        $received = $this->receivedContactRequests()
+            ->where('workflow_state', 'accepted')
+            ->pluck('sender_id');
+        return $sent->merge($received)->unique()->values()->toArray();
+    }
 }
