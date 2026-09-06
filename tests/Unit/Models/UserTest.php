@@ -3,7 +3,7 @@
 namespace Tests\Unit\Models;
 
 use App\Models\ContactRequest;
-use App\Models\CustomPivots\EventUserMapping;
+use App\Models\CustomPivots\EventEnroll;
 use App\Models\Event;
 use App\Models\Program;
 use App\Models\User;
@@ -53,6 +53,7 @@ class UserTest extends TestCase
             'remember_token',
             'access_code',
             'access_code_expires_at',
+            'preferred_start_time',
             'canvas_user_id'
         ];
         // Assert
@@ -78,6 +79,7 @@ class UserTest extends TestCase
             'access_code_expires_at',
             'canvas_user_id',
             'instagram',
+            'preferred_start_time',
             'discord',
         ];
         // Execute
@@ -348,7 +350,7 @@ class UserTest extends TestCase
         $user = User::with('events')->find($user->id);
         $pivot = $user->events->first()->pivot;
         // Assert
-        $this->assertInstanceOf(EventUserMapping::class, $pivot);
+        $this->assertInstanceOf(EventEnroll::class, $pivot);
         $this->assertEquals('confirmed', $pivot->workflow_state);
         $this->assertEquals('admin', $pivot->role);
     }
@@ -360,7 +362,7 @@ class UserTest extends TestCase
         $user = User::factory()->create();
         $event = Event::factory()->create(['user_id' => $creator->id]);
         $user->events()->attach($event->id, ['workflow_state' => 'confirmed', 'role' => 'attendee']);
-        $pivot = EventUserMapping::where('user_id', $user->id)->where('event_id', $event->id)->first();
+        $pivot = EventEnroll::where('user_id', $user->id)->where('event_id', $event->id)->first();
         $pivot->delete();
         // Execute
         $user = User::with('events')->find($user->id);
@@ -376,11 +378,11 @@ class UserTest extends TestCase
         $relation = $user->events();
         // Assert
         $this->assertInstanceOf(BelongsToMany::class, $relation);
-        $this->assertEquals('event_user_mapping', $relation->getTable());
+        $this->assertEquals('event_enrolls', $relation->getTable());
         $this->assertEquals('user_id', $relation->getForeignPivotKeyName());
         $this->assertEquals('event_id', $relation->getRelatedPivotKeyName());
         $this->assertEquals(Event::class, get_class($relation->getRelated()));
-        $this->assertEquals(EventUserMapping::class, $relation->getPivotClass());
+        $this->assertEquals(EventEnroll::class, $relation->getPivotClass());
         $this->assertContains('workflow_state', $relation->getPivotColumns());
         $this->assertContains('role', $relation->getPivotColumns());
     }
@@ -391,14 +393,14 @@ class UserTest extends TestCase
         $user = User::factory()->create();
         $event = Event::factory()->create();
         $user->events()->attach($event->id, ['workflow_state' => 'confirmed', 'role' => 'attendee']);
-        $pivot = EventUserMapping::where('user_id', $user->id)->where('event_id', $event->id)->first();
+        $pivot = EventEnroll::where('user_id', $user->id)->where('event_id', $event->id)->first();
         // Execute
         $pivot->delete();
         // Assert
-        $this->assertSoftDeleted('event_user_mapping', ['user_id' => $user->id, 'event_id' => $event->id]);
-        $this->assertNull(EventUserMapping::where('user_id', $user->id)->where('event_id', $event->id)->first());
-        $this->assertNotNull(EventUserMapping::withTrashed()->where('user_id', $user->id)->where('event_id', $event->id)->first());
-        $this->assertNotNull(EventUserMapping::withTrashed()->where('user_id', $user->id)->where('event_id', $event->id)->first());
+        $this->assertSoftDeleted('event_enrolls', ['user_id' => $user->id, 'event_id' => $event->id]);
+        $this->assertNull(EventEnroll::where('user_id', $user->id)->where('event_id', $event->id)->first());
+        $this->assertNotNull(EventEnroll::withTrashed()->where('user_id', $user->id)->where('event_id', $event->id)->first());
+        $this->assertNotNull(EventEnroll::withTrashed()->where('user_id', $user->id)->where('event_id', $event->id)->first());
     }
 
     public function test_model_has_sent_contact_requests_relationship(): void

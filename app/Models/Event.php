@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\CustomPivots\EventUserMapping;
+use App\Models\CustomPivots\EventEnroll;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -44,11 +44,11 @@ class Event extends Model
 
     public function participants(): BelongsToMany
     {
-        return $this->belongsToMany(User::class, 'event_user_mapping')
-            ->using(EventUserMapping::class)
+        return $this->belongsToMany(User::class, 'event_enrolls')
+            ->using(EventEnroll::class)
             ->withPivot(['workflow_state', 'role'])
             ->withTimestamps()
-            ->whereNull('event_user_mapping.deleted_at');
+            ->whereNull('event_enrolls.deleted_at');
     }
 
     public function actions(): HasMany
@@ -59,7 +59,7 @@ class Event extends Model
     public function scopewhereParticipant(Builder $query, int $user_id): Builder
     {
         return $query->whereHas('participants', function (Builder $q) use ($user_id) {
-            $q->where('event_user_mapping.user_id', $user_id);
+            $q->where('event_enrolls.user_id', $user_id);
         });
     }
 }

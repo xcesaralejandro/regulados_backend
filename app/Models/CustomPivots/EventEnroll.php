@@ -6,11 +6,11 @@ namespace App\Models\CustomPivots;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class EventUserMapping extends Pivot
+class EventEnroll extends Pivot
 {
   use SoftDeletes;
 
-  protected $table = 'event_user_mapping';
+  protected $table = 'event_enrolls';
 
   protected $fillable = [
     'event_id',

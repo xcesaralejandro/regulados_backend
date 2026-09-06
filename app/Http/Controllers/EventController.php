@@ -78,7 +78,7 @@ class EventController extends Controller
                 $query->where('start_at', '<=', Carbon::parse($to)->endOfDay());
             })
             ->whereDoesntHave('participants', function ($query) use ($user) {
-                $query->where('event_user_mapping.user_id', $user->id);
+                $query->where('event_enrolls.user_id', $user->id);
             });
         $public_events = (clone $base_query)
             ->where('visibility', 'public')

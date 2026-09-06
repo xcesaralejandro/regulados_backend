@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\CustomPivots\EventUserMapping;
+use App\Models\CustomPivots\EventEnroll;
 use App\Models\Event;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -27,7 +27,7 @@ class EventParticipationController extends Controller
                 abort(403);
             }
         }
-        $existing_participation = EventUserMapping::withTrashed()
+        $existing_participation = EventEnroll::withTrashed()
             ->where('event_id', $event->id)
             ->where('user_id', $user->id)
             ->first();
@@ -42,7 +42,7 @@ class EventParticipationController extends Controller
             ]);
             return response()->json($existing_participation, Response::HTTP_OK);
         }
-        $participation = EventUserMapping::create([
+        $participation = EventEnroll::create([
             'event_id' => $event->id,
             'user_id' => $user->id,
             'workflow_state' => 'confirmed',
@@ -58,7 +58,7 @@ class EventParticipationController extends Controller
             'workflow_state' => ['required', 'in:confirmed,declined,pending'],
         ]);
         $user_id = Auth::id();
-        $participation = EventUserMapping::where('event_id', $request->event_id)
+        $participation = EventEnroll::where('event_id', $request->event_id)
             ->where('user_id', $user_id)
             ->firstOrFail();
         $participation->update([
@@ -77,7 +77,7 @@ class EventParticipationController extends Controller
         if ($event->user_id === $user_id) {
             return response()->json(null, Response::HTTP_FORBIDDEN);
         }
-        $participation = EventUserMapping::where('event_id', $event->id)
+        $participation = EventEnroll::where('event_id', $event->id)
             ->where('user_id', $user_id)
             ->firstOrFail();
         $participation->delete();
@@ -88,7 +88,7 @@ class EventParticipationController extends Controller
     {
         $event = Event::findOrFail($event_id);
         $is_owner = $event->user_id === Auth::id();
-        $is_admin = EventUserMapping::where('event_id', $event->id)
+        $is_admin = EventEnroll::where('event_id', $event->id)
             ->where('user_id', Auth::id())
             ->where('role', 'admin')
             ->exists();
@@ -98,7 +98,7 @@ class EventParticipationController extends Controller
         if ($event->user_id === $user_id) {
             abort(403);
         }
-        $participation = EventUserMapping::where('event_id', $event->id)
+        $participation = EventEnroll::where('event_id', $event->id)
             ->where('user_id', $user_id)
             ->firstOrFail();
         $participation->delete();
@@ -110,7 +110,7 @@ class EventParticipationController extends Controller
         $event = Event::findOrFail($event_id);
         $targetUser = User::findOrFail($user_id);
         $isOwner = $event->user_id === Auth::id();
-        $isAdmin = EventUserMapping::where('event_id', $event->id)
+        $isAdmin = EventEnroll::where('event_id', $event->id)
             ->where('user_id', Auth::id())
             ->where('role', 'admin')
             ->exists();
@@ -120,7 +120,7 @@ class EventParticipationController extends Controller
         if (! in_array($targetUser->id, Auth::user()->getContactIds())) {
             abort(403);
         }
-        $participation = EventUserMapping::withTrashed()
+        $participation = EventEnroll::withTrashed()
             ->where('event_id', $event->id)
             ->where('user_id', $targetUser->id)
             ->first();
@@ -135,7 +135,7 @@ class EventParticipationController extends Controller
             ]);
             return response()->json($participation, Response::HTTP_OK);
         }
-        $participation = EventUserMapping::create([
+        $participation = EventEnroll::create([
             'event_id' => $event->id,
             'user_id' => $targetUser->id,
             'workflow_state' => 'pending',

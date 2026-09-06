@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Models;
 
-use App\Models\CustomPivots\EventUserMapping;
+use App\Models\CustomPivots\EventEnroll;
 use App\Models\Event;
 use App\Models\EventAction;
 use App\Models\EventCategory;
@@ -300,11 +300,11 @@ class EventTest extends TestCase
 
         // Assert
         $this->assertInstanceOf(BelongsToMany::class, $relation);
-        $this->assertEquals('event_user_mapping', $relation->getTable());
+        $this->assertEquals('event_enrolls', $relation->getTable());
         $this->assertEquals('event_id', $relation->getForeignPivotKeyName());
         $this->assertEquals('user_id', $relation->getRelatedPivotKeyName());
         $this->assertEquals(User::class, get_class($relation->getRelated()));
-        $this->assertEquals(EventUserMapping::class, $relation->getPivotClass());
+        $this->assertEquals(EventEnroll::class, $relation->getPivotClass());
         $this->assertContains('workflow_state', $relation->getPivotColumns());
         $this->assertContains('role', $relation->getPivotColumns());
     }
@@ -322,7 +322,7 @@ class EventTest extends TestCase
         $this->assertCount(2, $event->participants);
         $participant = $event->participants->firstWhere('id', $user->id);
         $this->assertNotNull($participant);
-        $this->assertInstanceOf(EventUserMapping::class, $participant->pivot);
+        $this->assertInstanceOf(EventEnroll::class, $participant->pivot);
         $this->assertEquals('confirmed', $participant->pivot->workflow_state);
         $this->assertEquals('admin', $participant->pivot->role);
     }
@@ -341,7 +341,7 @@ class EventTest extends TestCase
             'workflow_state' => 'pending',
             'role' => 'attendee',
         ]);
-        EventUserMapping::where('event_id', $event->id)
+        EventEnroll::where('event_id', $event->id)
             ->where('user_id', $userDeleted->id)
             ->delete();
         // Execute
@@ -364,7 +364,7 @@ class EventTest extends TestCase
         $this->assertCount(1, $event->participants);
         $creatorParticipant = $event->participants->first();
         $this->assertEquals($user->id, $creatorParticipant->id);
-        $this->assertInstanceOf(EventUserMapping::class, $creatorParticipant->pivot);
+        $this->assertInstanceOf(EventEnroll::class, $creatorParticipant->pivot);
         $this->assertEquals('admin', $creatorParticipant->pivot->role);
         $this->assertEquals('confirmed', $creatorParticipant->pivot->workflow_state);
     }

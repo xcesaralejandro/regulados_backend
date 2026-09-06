@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\CustomPivots\EventUserMapping;
+use App\Models\CustomPivots\EventEnroll;
 use App\Traits\HasAccessCode;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -33,7 +33,8 @@ class User extends Authenticatable
         'access_code_expires_at',
         'canvas_user_id',
         'instagram',
-        'discord'
+        'discord',
+        'preferred_start_time'
     ];
 
     protected $casts = [
@@ -53,6 +54,7 @@ class User extends Authenticatable
         'remember_token',
         'access_code',
         'access_code_expires_at',
+        'preferred_start_time',
         'canvas_user_id'
     ];
 
@@ -63,11 +65,11 @@ class User extends Authenticatable
 
     public function events(): BelongsToMany
     {
-        return $this->belongsToMany(Event::class, 'event_user_mapping')
-            ->using(EventUserMapping::class)
+        return $this->belongsToMany(Event::class, 'event_enrolls')
+            ->using(EventEnroll::class)
             ->withPivot(['workflow_state', 'role'])
             ->withTimestamps()
-            ->whereNull('event_user_mapping.deleted_at');
+            ->whereNull('event_enrolls.deleted_at');
     }
 
     public function sentContactRequests(): HasMany
