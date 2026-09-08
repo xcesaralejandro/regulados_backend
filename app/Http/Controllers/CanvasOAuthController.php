@@ -23,13 +23,14 @@ class CanvasOAuthController extends CanvasOAuthControllerBase
             return redirect()->away("reguladosapp://canvas?status=error&message=Client not has canvas url configured.");
         }
         $canvas_http = CanvasHttp::client($client->url, $canvas_token);
-        $response = $canvas_http->get('/api/v1/users/self')->send()->json();
-        $user_with_email = User::where('email', $response['email'])->first();
+        $self_response = $canvas_http->get('/api/v1/users/self')->send()->json();
+        $profile_response = $canvas_http->get('/api/v1/users/self/profile')->send()->json();
+        $user_with_email = User::where('email', $profile_response['primary_email'])->first();
         $token = null;
         if (isset($user_with_email)) {
             $user_with_email->update([
-                'name' => $response['first_name'],
-                'surname' => $response['last_name'],
+                'name' => $self_response['first_name'],
+                'surname' => $self_response['last_name'],
                 'canvas_user_id' => $user->standard->id
             ]);
             $token = $user_with_email->createToken('auth_token')->plainTextToken;
@@ -37,9 +38,9 @@ class CanvasOAuthController extends CanvasOAuthControllerBase
             $new_user = User::updateOrcreate(
                 ['canvas_user_id' => $user->standard->id],
                 [
-                    'email' => $response['email'],
-                    'name' => $response['first_name'],
-                    'surname' => $response['last_name'],
+                    'email' => $profile_response['primary_email'],
+                    'name' => $self_response['first_name'],
+                    'surname' => $self_response['last_name'],
                 ]
             );
             $token = $new_user->createToken('auth_token')->plainTextToken;
