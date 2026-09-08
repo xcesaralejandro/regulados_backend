@@ -8,6 +8,7 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventSeriesController;
 use App\Http\Controllers\EventActionController;
 use App\Http\Controllers\EventParticipationController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function () {
@@ -60,3 +61,5 @@ Route::delete('admin/event-participations/{event_id}/users/{user_id}', [EventPar
 Route::post('event-participations', [EventParticipationController::class, 'store'])->middleware('auth:sanctum');
 Route::put('event-participations', [EventParticipationController::class, 'update'])->middleware('auth:sanctum');
 Route::delete('event-participations', [EventParticipationController::class, 'destroy'])->middleware('auth:sanctum');
+
+Route::get('users/me', [UserController::class, 'me'])->middleware('auth:sanctum');

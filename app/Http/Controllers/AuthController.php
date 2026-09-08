@@ -25,6 +25,11 @@ class AuthController extends Controller
         }
         $user->update(['access_code' => null, 'access_code_expires_at' => null]);
         $token = $user->createToken('auth_token')->plainTextToken;
+        $user->makeVisible([
+            'gender',
+            'custom_gender',
+            'preferred_start_time'
+        ]);
         return response()->json([
             'access_token' => $token,
             'user' => $user
