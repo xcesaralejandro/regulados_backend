@@ -698,4 +698,217 @@ class EventParticipationControllerTest extends TestCase
         // Assert
         $response->assertNoContent();
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public function test_remove_participant_returns_401_when_user_is_unauthenticated(): void
+    {
+        // Prepare
+        $event = Event::factory()->create();
+        $targetUser = User::factory()->create();
+        // Execute
+        $response = $this->deleteJson("/api/admin/event-participations/{$event->id}/users/{$targetUser->id}");
+        // Assert
+        $response->assertStatus(401);
+    }
+
+    public function test_remove_participant_returns_404_when_event_does_not_exist(): void
+    {
+        // Prepare
+        $user = User::factory()->create();
+        $targetUser = User::factory()->create();
+        Sanctum::actingAs($user);
+        // Execute
+        $response = $this->deleteJson("/api/admin/event-participations/999999/users/{$targetUser->id}");
+        // Assert
+        $response->assertStatus(404);
+    }
+
+    public function test_remove_participant_returns_403_when_user_is_neither_owner_nor_admin(): void
+    {
+        // Prepare
+        $owner = User::factory()->create();
+        $regularUser = User::factory()->create();
+        $targetUser = User::factory()->create();
+        $event = Event::factory()->create(['user_id' => $owner->id]);
+        EventEnroll::create([
+            'event_id' => $event->id,
+            'user_id' => $regularUser->id,
+            'workflow_state' => 'confirmed',
+            'role' => 'attendee',
+        ]);
+        EventEnroll::create([
+            'event_id' => $event->id,
+            'user_id' => $targetUser->id,
+            'workflow_state' => 'confirmed',
+            'role' => 'attendee',
+        ]);
+        Sanctum::actingAs($regularUser);
+        // Execute
+        $response = $this->deleteJson("/api/admin/event-participations/{$event->id}/users/{$targetUser->id}");
+        // Assert
+        $response->assertStatus(403);
+    }
+
+    public function test_remove_participant_returns_403_when_trying_to_remove_the_event_owner(): void
+    {
+        // Prepare
+        $owner = User::factory()->create();
+        $adminUser = User::factory()->create();
+        $event = Event::factory()->create(['user_id' => $owner->id]);
+        EventEnroll::create([
+            'event_id' => $event->id,
+            'user_id' => $adminUser->id,
+            'workflow_state' => 'confirmed',
+            'role' => 'admin',
+        ]);
+        EventEnroll::create([
+            'event_id' => $event->id,
+            'user_id' => $owner->id,
+            'workflow_state' => 'confirmed',
+            'role' => 'admin',
+        ]);
+        Sanctum::actingAs($adminUser);
+        // Execute
+        $response = $this->deleteJson("/api/admin/event-participations/{$event->id}/users/{$owner->id}");
+        // Assert
+        $response->assertStatus(403);
+    }
+
+    public function test_remove_participant_returns_403_when_owner_tries_to_remove_themselves(): void
+    {
+        // Prepare
+        $owner = User::factory()->create();
+        $event = Event::factory()->create(['user_id' => $owner->id]);
+        EventEnroll::create([
+            'event_id' => $event->id,
+            'user_id' => $owner->id,
+            'workflow_state' => 'confirmed',
+            'role' => 'admin',
+        ]);
+        Sanctum::actingAs($owner);
+        // Execute
+        $response = $this->deleteJson("/api/admin/event-participations/{$event->id}/users/{$owner->id}");
+        // Assert
+        $response->assertStatus(403);
+    }
+
+    public function test_remove_participant_returns_404_when_target_user_has_no_participation_in_event(): void
+    {
+        // Prepare
+        $owner = User::factory()->create();
+        $targetUser = User::factory()->create();
+        $event = Event::factory()->create(['user_id' => $owner->id]);
+        Sanctum::actingAs($owner);
+        // Execute
+        $response = $this->deleteJson("/api/admin/event-participations/{$event->id}/users/{$targetUser->id}");
+        // Assert
+        $response->assertStatus(404);
+    }
+
+    public function test_remove_participant_returns_404_when_target_user_participation_is_already_soft_deleted(): void
+    {
+        // Prepare
+        $owner = User::factory()->create();
+        $targetUser = User::factory()->create();
+        $event = Event::factory()->create(['user_id' => $owner->id]);
+        $participation = EventEnroll::create([
+            'event_id' => $event->id,
+            'user_id' => $targetUser->id,
+            'workflow_state' => 'confirmed',
+            'role' => 'attendee',
+        ]);
+        $participation->delete();
+        Sanctum::actingAs($owner);
+        // Execute
+        $response = $this->deleteJson("/api/admin/event-participations/{$event->id}/users/{$targetUser->id}");
+        // Assert
+        $response->assertStatus(404);
+    }
+
+    public function test_remove_participant_returns_204_when_caller_is_event_owner(): void
+    {
+        // Prepare
+        $owner = User::factory()->create();
+        $targetUser = User::factory()->create();
+        $event = Event::factory()->create(['user_id' => $owner->id]);
+        EventEnroll::create([
+            'event_id' => $event->id,
+            'user_id' => $targetUser->id,
+            'workflow_state' => 'confirmed',
+            'role' => 'attendee',
+        ]);
+        Sanctum::actingAs($owner);
+        // Execute
+        $response = $this->deleteJson("/api/admin/event-participations/{$event->id}/users/{$targetUser->id}");
+        // Assert
+        $response->assertStatus(204);
+    }
+
+    public function test_remove_participant_returns_204_when_caller_is_event_admin_but_no_owner(): void
+    {
+        // Prepare
+        $owner = User::factory()->create();
+        $adminUser = User::factory()->create();
+        $targetUser = User::factory()->create();
+        $event = Event::factory()->create(['user_id' => $owner->id]);
+        EventEnroll::create([
+            'event_id' => $event->id,
+            'user_id' => $adminUser->id,
+            'workflow_state' => 'confirmed',
+            'role' => 'admin',
+        ]);
+        EventEnroll::create([
+            'event_id' => $event->id,
+            'user_id' => $targetUser->id,
+            'workflow_state' => 'confirmed',
+            'role' => 'attendee',
+        ]);
+        Sanctum::actingAs($adminUser);
+        // Execute
+        $response = $this->deleteJson("/api/admin/event-participations/{$event->id}/users/{$targetUser->id}");
+        // Assert
+        $response->assertStatus(204);
+    }
+
+    public function test_remove_participant_returns_empty_content_on_success(): void
+    {
+        // Prepare
+        $owner = User::factory()->create();
+        $targetUser = User::factory()->create();
+        $event = Event::factory()->create(['user_id' => $owner->id]);
+        EventEnroll::create([
+            'event_id' => $event->id,
+            'user_id' => $targetUser->id,
+            'workflow_state' => 'confirmed',
+            'role' => 'attendee',
+        ]);
+        Sanctum::actingAs($owner);
+        // Execute
+        $response = $this->deleteJson("/api/admin/event-participations/{$event->id}/users/{$targetUser->id}");
+        // Assert
+        $response->assertNoContent();
+    }
 }
