@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Controllers;
 
+use App\Models\ContactRequest;
 use App\Models\Event;
 use App\Models\EventAction;
 use App\Models\EventCategory;
@@ -118,7 +119,7 @@ class EventControllerTest extends TestCase
         $category = EventCategory::factory()->create();
         $event = Event::factory()->create(['event_category_id' => $category->id]);
         $event->participants()->attach($user->id);
-        $participantKeys = ['id', 'semester', 'name', 'surname', 'email', 'phone', 'instagram', 'discord', 'birthdate', 'avatar', 'pivot', 'program'];
+        $participantKeys = ['id', 'semester', 'name', 'surname', 'avatar', 'pivot', 'program'];
         Sanctum::actingAs($user);
         // Execute
         $response = $this->getJson('/api/events');
@@ -599,7 +600,7 @@ class EventControllerTest extends TestCase
             'start_at' => '2026-09-01 10:00:00',
             'end_at' => '2026-09-01 12:00:00',
         ];
-        $participantKeys = ['id', 'semester', 'name', 'surname', 'email', 'phone', 'instagram', 'discord', 'birthdate', 'avatar', 'pivot', 'program'];
+        $participantKeys = ['id', 'semester', 'name', 'surname', 'avatar', 'pivot', 'program'];
         // Execute
         $response = $this->postJson('/api/events', $payload);
         // Assert
@@ -1202,7 +1203,7 @@ class EventControllerTest extends TestCase
         Sanctum::actingAs($user);
         $event = Event::factory()->create(['user_id' => $user->id]);
         $event->participants()->attach($user->id);
-        $participantKeys = ['id', 'semester', 'name', 'surname', 'email', 'phone', 'instagram', 'discord', 'birthdate', 'avatar', 'pivot', 'program'];
+        $participantKeys = ['id', 'semester', 'name', 'surname', 'avatar', 'pivot', 'program'];
         // Execute
         $response = $this->putJson("/api/events/{$event->id}", ['title' => 'Participants Check']);
         // Assert
@@ -1521,5 +1522,531 @@ class EventControllerTest extends TestCase
         $response = $this->deleteJson('/api/events/999999');
         // Assert
         $response->assertStatus(404);
+    }
+
+    public function test_feed_returns_401_when_user_is_unauthenticated(): void
+    {
+        // Prepare & Execute
+        $response = $this->getJson('/api/events/feed');
+        // Assert
+        $response->assertStatus(401);
+    }
+
+    public function test_feed_returns_200_and_empty_arrays_when_no_events_exist(): void
+    {
+        // Prepare
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+        // Execute
+        $response = $this->getJson('/api/events/feed');
+        // Assert
+        $response->assertStatus(200);
+        $response->assertExactJson([
+            'public_events' => [],
+            'contact_events' => [],
+        ]);
+    }
+
+    public function test_feed_returns_exact_root_keys(): void
+    {
+        // Prepare
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+        // Execute
+        $response = $this->getJson('/api/events/feed');
+        // Assert
+        $response->assertStatus(200);
+        $this->assertSame(['public_events', 'contact_events'], array_keys($response->json()));
+    }
+
+    public function test_feed_returns_200_with_expected_json_structure_when_events_exist(): void
+    {
+        // Prepare
+        $user = User::factory()->create();
+        $contactUser = User::factory()->create();
+        ContactRequest::factory()->create([
+            'sender_id' => $user->id,
+            'receiver_id' => $contactUser->id,
+            'workflow_state' => 'accepted',
+        ]);
+        $otherUser = User::factory()->create();
+        $category = EventCategory::factory()->create();
+        Event::factory()->create([
+            'user_id' => $otherUser->id,
+            'event_category_id' => $category->id,
+            'visibility' => 'public',
+        ]);
+        Event::factory()->create([
+            'user_id' => $contactUser->id,
+            'event_category_id' => $category->id,
+            'visibility' => 'contacts',
+        ]);
+        $event_structure = [
+            'id',
+            'repeat_code',
+            'title',
+            'description',
+            'location',
+            'notes',
+            'visibility',
+            'start_at',
+            'end_at',
+            'created_at',
+            'updated_at',
+            'participants' => [
+                '*' => [
+                    'id',
+                    'semester',
+                    'name',
+                    'surname',
+                    'avatar',
+                    'pivot' => [
+                        'workflow_state',
+                        'role',
+                    ],
+                    'program' => [
+                        'id',
+                        'name',
+                        'university' => [
+                            'id',
+                            'name',
+                            'short_name',
+                        ],
+                    ],
+                ],
+            ],
+            'actions',
+            'category' => [
+                'id',
+                'name',
+                'description',
+                'icon',
+                'text_color',
+                'background_color',
+            ],
+        ];
+        Sanctum::actingAs($user);
+        // Execute
+        $response = $this->getJson('/api/events/feed');
+        // Assert
+        $response->assertStatus(200);
+        $response->assertJsonStructure([
+            'public_events' => [
+                '*' => $event_structure,
+            ],
+            'contact_events' => [
+                '*' => $event_structure,
+            ],
+        ]);
+    }
+
+    public function test_feed_returns_exact_json_matching_records(): void
+    {
+        // Prepare
+        $user = User::factory()->create();
+        $contactUser = User::factory()->create();
+        ContactRequest::factory()->create([
+            'sender_id' => $user->id,
+            'receiver_id' => $contactUser->id,
+            'workflow_state' => 'accepted',
+        ]);
+        $otherUser = User::factory()->create();
+        $category = EventCategory::factory()->create();
+        $publicEvent = Event::factory()->create([
+            'user_id' => $otherUser->id,
+            'event_category_id' => $category->id,
+            'visibility' => 'public',
+        ]);
+        $contactEvent = Event::factory()->create([
+            'user_id' => $contactUser->id,
+            'event_category_id' => $category->id,
+            'visibility' => 'contacts',
+        ]);
+        Sanctum::actingAs($user);
+        // Execute
+        $response = $this->getJson('/api/events/feed');
+        // Assert
+        $response->assertStatus(200);
+        $response->assertExactJson([
+            'public_events' => [
+                $publicEvent->fresh()->load('category')->toArray(),
+            ],
+            'contact_events' => [
+                $contactEvent->fresh()->load('category')->toArray(),
+            ],
+        ]);
+    }
+
+    public function test_feed_includes_public_events_from_other_users(): void
+    {
+        // Prepare
+        $user = User::factory()->create();
+        $otherUser = User::factory()->create();
+        $category = EventCategory::factory()->create();
+        $publicEvent = Event::factory()->create([
+            'user_id' => $otherUser->id,
+            'event_category_id' => $category->id,
+            'visibility' => 'public',
+        ]);
+        Sanctum::actingAs($user);
+        // Execute
+        $response = $this->getJson('/api/events/feed');
+        // Assert
+        $response->assertStatus(200);
+        $response->assertJsonCount(1, 'public_events');
+        $response->assertJsonFragment(['id' => $publicEvent->id]);
+    }
+
+    public function test_feed_excludes_own_public_events_from_public_events(): void
+    {
+        // Prepare
+        $user = User::factory()->create();
+        $category = EventCategory::factory()->create();
+        $ownEvent = Event::factory()->create([
+            'user_id' => $user->id,
+            'event_category_id' => $category->id,
+            'visibility' => 'public',
+        ]);
+        Sanctum::actingAs($user);
+        // Execute
+        $response = $this->getJson('/api/events/feed');
+        // Assert
+        $response->assertStatus(200);
+        $response->assertJsonCount(0, 'public_events');
+        $response->assertJsonMissing(['id' => $ownEvent->id]);
+    }
+
+    public function test_feed_excludes_public_events_where_user_is_enrolled(): void
+    {
+        // Prepare
+        $user = User::factory()->create();
+        $otherUser = User::factory()->create();
+        $category = EventCategory::factory()->create();
+        $enrolledEvent = Event::factory()->create([
+            'user_id' => $otherUser->id,
+            'event_category_id' => $category->id,
+            'visibility' => 'public',
+        ]);
+        $enrolledEvent->participants()->attach($user->id);
+        Sanctum::actingAs($user);
+        // Execute
+        $response = $this->getJson('/api/events/feed');
+        // Assert
+        $response->assertStatus(200);
+        $response->assertJsonCount(0, 'public_events');
+        $response->assertJsonMissing(['id' => $enrolledEvent->id]);
+    }
+
+    public function test_feed_returns_empty_contact_events_when_user_has_no_contacts(): void
+    {
+        // Prepare
+        $user = User::factory()->create();
+        $otherUser = User::factory()->create();
+        $category = EventCategory::factory()->create();
+        Event::factory()->create([
+            'user_id' => $otherUser->id,
+            'event_category_id' => $category->id,
+            'visibility' => 'contacts',
+        ]);
+        Sanctum::actingAs($user);
+        // Execute
+        $response = $this->getJson('/api/events/feed');
+        // Assert
+        $response->assertStatus(200);
+        $response->assertExactJson([
+            'public_events' => [],
+            'contact_events' => [],
+        ]);
+    }
+
+    public function test_feed_includes_contact_events_when_request_is_sent_and_accepted(): void
+    {
+        // Prepare
+        $user = User::factory()->create();
+        $contactUser = User::factory()->create();
+        ContactRequest::factory()->create([
+            'sender_id' => $user->id,
+            'receiver_id' => $contactUser->id,
+            'workflow_state' => 'accepted',
+        ]);
+        $category = EventCategory::factory()->create();
+        $contactEvent = Event::factory()->create([
+            'user_id' => $contactUser->id,
+            'event_category_id' => $category->id,
+            'visibility' => 'contacts',
+        ]);
+        Sanctum::actingAs($user);
+        // Execute
+        $response = $this->getJson('/api/events/feed');
+        // Assert
+        $response->assertStatus(200);
+        $response->assertJsonCount(1, 'contact_events');
+        $response->assertJsonFragment(['id' => $contactEvent->id]);
+    }
+
+    public function test_feed_includes_contact_events_when_request_is_received_and_accepted(): void
+    {
+        // Prepare
+        $user = User::factory()->create();
+        $contactUser = User::factory()->create();
+        ContactRequest::factory()->create([
+            'sender_id' => $contactUser->id,
+            'receiver_id' => $user->id,
+            'workflow_state' => 'accepted',
+        ]);
+        $category = EventCategory::factory()->create();
+        $contactEvent = Event::factory()->create([
+            'user_id' => $contactUser->id,
+            'event_category_id' => $category->id,
+            'visibility' => 'contacts',
+        ]);
+        Sanctum::actingAs($user);
+        // Execute
+        $response = $this->getJson('/api/events/feed');
+        // Assert
+        $response->assertStatus(200);
+        $response->assertJsonCount(1, 'contact_events');
+        $response->assertJsonFragment(['id' => $contactEvent->id]);
+    }
+
+    public function test_feed_excludes_contact_events_when_contact_request_is_pending(): void
+    {
+        // Prepare
+        $user = User::factory()->create();
+        $pendingContact = User::factory()->create();
+        ContactRequest::factory()->create([
+            'sender_id' => $user->id,
+            'receiver_id' => $pendingContact->id,
+            'workflow_state' => 'pending',
+        ]);
+        $category = EventCategory::factory()->create();
+        $contactEvent = Event::factory()->create([
+            'user_id' => $pendingContact->id,
+            'event_category_id' => $category->id,
+            'visibility' => 'contacts',
+        ]);
+        Sanctum::actingAs($user);
+        // Execute
+        $response = $this->getJson('/api/events/feed');
+        // Assert
+        $response->assertStatus(200);
+        $response->assertJsonCount(0, 'contact_events');
+        $response->assertJsonMissing(['id' => $contactEvent->id]);
+    }
+
+    public function test_feed_excludes_contact_events_from_non_contacts(): void
+    {
+        // Prepare
+        $user = User::factory()->create();
+        $nonContactUser = User::factory()->create();
+        $category = EventCategory::factory()->create();
+        $nonContactEvent = Event::factory()->create([
+            'user_id' => $nonContactUser->id,
+            'event_category_id' => $category->id,
+            'visibility' => 'contacts',
+        ]);
+        Sanctum::actingAs($user);
+        // Execute
+        $response = $this->getJson('/api/events/feed');
+        // Assert
+        $response->assertStatus(200);
+        $response->assertJsonCount(0, 'contact_events');
+        $response->assertJsonMissing(['id' => $nonContactEvent->id]);
+    }
+
+    public function test_feed_excludes_contact_events_where_user_is_enrolled(): void
+    {
+        // Prepare
+        $user = User::factory()->create();
+        $contactUser = User::factory()->create();
+        ContactRequest::factory()->create([
+            'sender_id' => $user->id,
+            'receiver_id' => $contactUser->id,
+            'workflow_state' => 'accepted',
+        ]);
+        $category = EventCategory::factory()->create();
+        $contactEvent = Event::factory()->create([
+            'user_id' => $contactUser->id,
+            'event_category_id' => $category->id,
+            'visibility' => 'contacts',
+        ]);
+        $contactEvent->participants()->attach($user->id);
+        Sanctum::actingAs($user);
+        // Execute
+        $response = $this->getJson('/api/events/feed');
+        // Assert
+        $response->assertStatus(200);
+        $response->assertJsonCount(0, 'contact_events');
+        $response->assertJsonMissing(['id' => $contactEvent->id]);
+    }
+
+    public function test_feed_excludes_private_events(): void
+    {
+        // Prepare
+        $user = User::factory()->create();
+        $contactUser = User::factory()->create();
+        ContactRequest::factory()->create([
+            'sender_id' => $user->id,
+            'receiver_id' => $contactUser->id,
+            'workflow_state' => 'accepted',
+        ]);
+        $category = EventCategory::factory()->create();
+        $privateEvent = Event::factory()->create([
+            'user_id' => $contactUser->id,
+            'event_category_id' => $category->id,
+            'visibility' => 'private',
+        ]);
+        Sanctum::actingAs($user);
+        // Execute
+        $response = $this->getJson('/api/events/feed');
+        // Assert
+        $response->assertStatus(200);
+        $response->assertJsonMissing(['id' => $privateEvent->id]);
+    }
+
+    public function test_feed_returns_422_when_from_date_format_is_invalid(): void
+    {
+        // Prepare
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+        // Execute
+        $response = $this->getJson('/api/events/feed?from=invalid-date');
+        // Assert
+        $response->assertStatus(422);
+    }
+
+    public function test_feed_returns_422_when_to_date_format_is_invalid(): void
+    {
+        // Prepare
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+        // Execute
+        $response = $this->getJson('/api/events/feed?to=invalid-date');
+        // Assert
+        $response->assertStatus(422);
+    }
+
+    public function test_feed_returns_422_when_to_is_before_from(): void
+    {
+        // Prepare
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+        // Execute
+        $response = $this->getJson('/api/events/feed?from=2026-07-10&to=2026-07-01');
+        // Assert
+        $response->assertStatus(422);
+    }
+
+    public function test_feed_accepts_to_date_equal_to_from_date(): void
+    {
+        // Prepare
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+        // Execute
+        $response = $this->getJson('/api/events/feed?from=2026-07-10&to=2026-07-10');
+        // Assert
+        $response->assertStatus(200);
+    }
+
+    public function test_feed_accepts_null_values_for_dates(): void
+    {
+        // Prepare
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+        // Execute
+        $response = $this->getJson('/api/events/feed?from=&to=');
+        // Assert
+        $response->assertStatus(200);
+    }
+
+    public function test_feed_filters_events_from_start_of_day_when_from_is_provided(): void
+    {
+        // Prepare
+        $user = User::factory()->create();
+        $otherUser = User::factory()->create();
+        $category = EventCategory::factory()->create();
+        $pastEvent = Event::factory()->create([
+            'user_id' => $otherUser->id,
+            'event_category_id' => $category->id,
+            'visibility' => 'public',
+            'start_at' => '2026-07-04 23:59:59',
+        ]);
+        $matchingEvent = Event::factory()->create([
+            'user_id' => $otherUser->id,
+            'event_category_id' => $category->id,
+            'visibility' => 'public',
+            'start_at' => '2026-07-05 00:00:00',
+        ]);
+        Sanctum::actingAs($user);
+        // Execute
+        $response = $this->getJson('/api/events/feed?from=2026-07-05');
+        // Assert
+        $response->assertStatus(200);
+        $response->assertJsonCount(1, 'public_events');
+        $response->assertJsonPath('public_events.0.id', $matchingEvent->id);
+        $this->assertNotContains($pastEvent->id, $response->json('public_events.*.id'));
+    }
+
+    public function test_feed_filters_events_until_end_of_day_when_to_is_provided(): void
+    {
+        // Prepare
+        $user = User::factory()->create();
+        $otherUser = User::factory()->create();
+        $category = EventCategory::factory()->create();
+        $matchingEvent = Event::factory()->create([
+            'user_id' => $otherUser->id,
+            'event_category_id' => $category->id,
+            'visibility' => 'public',
+            'start_at' => '2026-07-05 23:59:59',
+        ]);
+        $futureEvent = Event::factory()->create([
+            'user_id' => $otherUser->id,
+            'event_category_id' => $category->id,
+            'visibility' => 'public',
+            'start_at' => '2026-07-06 00:00:00',
+        ]);
+        Sanctum::actingAs($user);
+        // Execute
+        $response = $this->getJson('/api/events/feed?to=2026-07-05');
+        // Assert
+        $response->assertStatus(200);
+        $response->assertJsonCount(1, 'public_events');
+        $response->assertJsonPath('public_events.0.id', $matchingEvent->id);
+        $this->assertNotContains($futureEvent->id, $response->json('public_events.*.id'));
+    }
+
+    public function test_feed_filters_events_inside_from_and_to_range(): void
+    {
+        // Prepare
+        $user = User::factory()->create();
+        $otherUser = User::factory()->create();
+        $category = EventCategory::factory()->create();
+        $beforeEvent = Event::factory()->create([
+            'user_id' => $otherUser->id,
+            'event_category_id' => $category->id,
+            'visibility' => 'public',
+            'start_at' => '2026-06-30 23:59:59',
+        ]);
+        $inRangeEvent = Event::factory()->create([
+            'user_id' => $otherUser->id,
+            'event_category_id' => $category->id,
+            'visibility' => 'public',
+            'start_at' => '2026-07-05 12:00:00',
+        ]);
+        $afterEvent = Event::factory()->create([
+            'user_id' => $otherUser->id,
+            'event_category_id' => $category->id,
+            'visibility' => 'public',
+            'start_at' => '2026-07-11 00:00:00',
+        ]);
+        Sanctum::actingAs($user);
+        // Execute
+        $response = $this->getJson('/api/events/feed?from=2026-07-01&to=2026-07-10');
+        // Assert
+        $response->assertStatus(200);
+        $response->assertJsonCount(1, 'public_events');
+        $response->assertJsonPath('public_events.0.id', $inRangeEvent->id);
+        $this->assertNotContains($beforeEvent->id, $response->json('public_events.*.id'));
+        $this->assertNotContains($afterEvent->id, $response->json('public_events.*.id'));
     }
 }

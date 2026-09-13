@@ -46,6 +46,14 @@ class Event extends Model
     {
         return $this->belongsToMany(User::class, 'event_enrolls')
             ->using(EventEnroll::class)
+            ->select([
+                'users.id',
+                'users.semester',
+                'users.name',
+                'users.surname',
+                'users.avatar',
+                'users.program_id',
+            ])
             ->withPivot(['workflow_state', 'role'])
             ->withTimestamps()
             ->whereNull('event_enrolls.deleted_at');
