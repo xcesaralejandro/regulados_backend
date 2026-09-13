@@ -11,7 +11,7 @@ class EventEnroll extends Pivot
   use SoftDeletes;
 
   protected $table = 'event_enrolls';
-
+  public $incrementing = true;
   protected $fillable = [
     'event_id',
     'user_id',
