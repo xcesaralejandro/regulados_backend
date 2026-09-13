@@ -699,30 +699,6 @@ class EventParticipationControllerTest extends TestCase
         $response->assertNoContent();
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     public function test_remove_participant_returns_401_when_user_is_unauthenticated(): void
     {
         // Prepare
@@ -910,5 +886,345 @@ class EventParticipationControllerTest extends TestCase
         $response = $this->deleteJson("/api/admin/event-participations/{$event->id}/users/{$targetUser->id}");
         // Assert
         $response->assertNoContent();
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public function test_add_participant_returns_401_when_user_is_unauthenticated(): void
+    {
+        // Prepare
+        $event = Event::factory()->create();
+        $targetUser = User::factory()->create();
+        // Execute
+        $response = $this->postJson("/api/admin/event-participations/{$event->id}/users/{$targetUser->id}");
+        // Assert
+        $response->assertStatus(401);
+    }
+
+    public function test_add_participant_returns_404_when_event_does_not_exist(): void
+    {
+        // Prepare
+        $caller = User::factory()->create();
+        $targetUser = User::factory()->create();
+        Sanctum::actingAs($caller);
+        // Execute
+        $response = $this->postJson("/api/admin/event-participations/999999/users/{$targetUser->id}");
+        // Assert
+        $response->assertStatus(404);
+    }
+
+    public function test_add_participant_returns_404_when_target_user_does_not_exist(): void
+    {
+        // Prepare
+        $caller = User::factory()->create();
+        $event = Event::factory()->create(['user_id' => $caller->id]);
+        Sanctum::actingAs($caller);
+        // Execute
+        $response = $this->postJson("/api/admin/event-participations/{$event->id}/users/999999");
+        // Assert
+        $response->assertStatus(404);
+    }
+
+    public function test_add_participant_returns_403_when_caller_is_neither_owner_nor_admin(): void
+    {
+        // Prepare
+        $owner = User::factory()->create();
+        $caller = User::factory()->create();
+        $targetUser = User::factory()->create();
+        $event = Event::factory()->create(['user_id' => $owner->id]);
+        ContactRequest::factory()->create([
+            'sender_id' => $caller->id,
+            'receiver_id' => $targetUser->id,
+            'workflow_state' => 'accepted',
+        ]);
+        EventEnroll::create([
+            'event_id' => $event->id,
+            'user_id' => $caller->id,
+            'workflow_state' => 'confirmed',
+            'role' => 'attendee',
+        ]);
+        Sanctum::actingAs($caller);
+        // Execute
+        $response = $this->postJson("/api/admin/event-participations/{$event->id}/users/{$targetUser->id}");
+        // Assert
+        $response->assertStatus(403);
+    }
+
+    public function test_add_participant_returns_403_when_target_user_is_not_a_contact(): void
+    {
+        // Prepare
+        $owner = User::factory()->create();
+        $targetUser = User::factory()->create();
+        $event = Event::factory()->create(['user_id' => $owner->id]);
+        Sanctum::actingAs($owner);
+        // Execute
+        $response = $this->postJson("/api/admin/event-participations/{$event->id}/users/{$targetUser->id}");
+        // Assert
+        $response->assertStatus(403);
+    }
+
+    public function test_add_participant_returns_403_when_contact_request_is_pending(): void
+    {
+        // Prepare
+        $owner = User::factory()->create();
+        $targetUser = User::factory()->create();
+        $event = Event::factory()->create(['user_id' => $owner->id]);
+        ContactRequest::factory()->create([
+            'sender_id' => $owner->id,
+            'receiver_id' => $targetUser->id,
+            'workflow_state' => 'pending',
+        ]);
+        Sanctum::actingAs($owner);
+        // Execute
+        $response = $this->postJson("/api/admin/event-participations/{$event->id}/users/{$targetUser->id}");
+        // Assert
+        $response->assertStatus(403);
+    }
+
+    public function test_add_participant_returns_403_when_contact_request_is_rejected(): void
+    {
+        // Prepare
+        $owner = User::factory()->create();
+        $targetUser = User::factory()->create();
+        $event = Event::factory()->create(['user_id' => $owner->id]);
+        ContactRequest::factory()->create([
+            'sender_id' => $owner->id,
+            'receiver_id' => $targetUser->id,
+            'workflow_state' => 'rejected',
+        ]);
+        Sanctum::actingAs($owner);
+        // Execute
+        $response = $this->postJson("/api/admin/event-participations/{$event->id}/users/{$targetUser->id}");
+        // Assert
+        $response->assertStatus(403);
+    }
+
+    public function test_add_participant_creates_enrollment_and_returns_201_when_caller_is_event_owner(): void
+    {
+        // Prepare
+        $owner = User::factory()->create();
+        $targetUser = User::factory()->create();
+        $event = Event::factory()->create(['user_id' => $owner->id]);
+        ContactRequest::factory()->create([
+            'sender_id' => $owner->id,
+            'receiver_id' => $targetUser->id,
+            'workflow_state' => 'accepted',
+        ]);
+        Sanctum::actingAs($owner);
+        // Execute
+        $response = $this->postJson("/api/admin/event-participations/{$event->id}/users/{$targetUser->id}");
+        // Assert
+        $response->assertStatus(201);
+        $this->assertDatabaseHas('event_enrolls', [
+            'event_id' => $event->id,
+            'user_id' => $targetUser->id,
+            'workflow_state' => 'pending',
+            'role' => 'attendee',
+            'deleted_at' => null,
+        ]);
+    }
+
+    public function test_add_participant_creates_enrollment_and_returns_201_when_caller_is_event_admin(): void
+    {
+        // Prepare
+        $owner = User::factory()->create();
+        $adminCaller = User::factory()->create();
+        $targetUser = User::factory()->create();
+        $event = Event::factory()->create(['user_id' => $owner->id]);
+        EventEnroll::create([
+            'event_id' => $event->id,
+            'user_id' => $adminCaller->id,
+            'workflow_state' => 'confirmed',
+            'role' => 'admin',
+        ]);
+        ContactRequest::factory()->create([
+            'sender_id' => $adminCaller->id,
+            'receiver_id' => $targetUser->id,
+            'workflow_state' => 'accepted',
+        ]);
+        Sanctum::actingAs($adminCaller);
+        // Execute
+        $response = $this->postJson("/api/admin/event-participations/{$event->id}/users/{$targetUser->id}");
+        // Assert
+        $response->assertStatus(201);
+        $this->assertDatabaseHas('event_enrolls', [
+            'event_id' => $event->id,
+            'user_id' => $targetUser->id,
+            'workflow_state' => 'pending',
+            'role' => 'attendee',
+            'deleted_at' => null,
+        ]);
+    }
+
+    public function test_add_participant_creates_enrollment_when_caller_is_receiver_of_contact_request(): void
+    {
+        // Prepare
+        $owner = User::factory()->create();
+        $targetUser = User::factory()->create();
+        $event = Event::factory()->create(['user_id' => $owner->id]);
+        ContactRequest::factory()->create([
+            'sender_id' => $targetUser->id,
+            'receiver_id' => $owner->id,
+            'workflow_state' => 'accepted',
+        ]);
+        Sanctum::actingAs($owner);
+        // Execute
+        $response = $this->postJson("/api/admin/event-participations/{$event->id}/users/{$targetUser->id}");
+        // Assert
+        $response->assertStatus(201);
+        $this->assertDatabaseHas('event_enrolls', [
+            'event_id' => $event->id,
+            'user_id' => $targetUser->id,
+            'workflow_state' => 'pending',
+            'role' => 'attendee',
+            'deleted_at' => null,
+        ]);
+    }
+
+    public function test_add_participant_returns_expected_json_structure_on_creation(): void
+    {
+        // Prepare
+        $owner = User::factory()->create();
+        $targetUser = User::factory()->create();
+        $event = Event::factory()->create(['user_id' => $owner->id]);
+        ContactRequest::factory()->create([
+            'sender_id' => $owner->id,
+            'receiver_id' => $targetUser->id,
+            'workflow_state' => 'accepted',
+        ]);
+        Sanctum::actingAs($owner);
+        // Execute
+        $response = $this->postJson("/api/admin/event-participations/{$event->id}/users/{$targetUser->id}");
+        // Assert
+        $response->assertStatus(201);
+        $response->assertJsonStructure([
+            'id',
+            'workflow_state',
+            'role',
+        ]);
+    }
+
+    public function test_add_participant_returns_exact_json_matching_fresh_record_on_creation(): void
+    {
+        // Prepare
+        $owner = User::factory()->create();
+        $targetUser = User::factory()->create();
+        $event = Event::factory()->create(['user_id' => $owner->id]);
+        ContactRequest::factory()->create([
+            'sender_id' => $owner->id,
+            'receiver_id' => $targetUser->id,
+            'workflow_state' => 'accepted',
+        ]);
+        Sanctum::actingAs($owner);
+        // Execute
+        $response = $this->postJson("/api/admin/event-participations/{$event->id}/users/{$targetUser->id}");
+        // Assert
+        $response->assertStatus(201);
+        $enroll = EventEnroll::where('event_id', $event->id)->where('user_id', $targetUser->id)->first();
+        $response->assertExactJson($enroll->fresh()->toArray());
+    }
+
+    public function test_add_participant_returns_200_and_does_not_duplicate_when_participation_already_exists(): void
+    {
+        // Prepare
+        $owner = User::factory()->create();
+        $targetUser = User::factory()->create();
+        $event = Event::factory()->create(['user_id' => $owner->id]);
+        ContactRequest::factory()->create([
+            'sender_id' => $owner->id,
+            'receiver_id' => $targetUser->id,
+            'workflow_state' => 'accepted',
+        ]);
+        $existingEnroll = EventEnroll::create([
+            'event_id' => $event->id,
+            'user_id' => $targetUser->id,
+            'workflow_state' => 'confirmed',
+            'role' => 'attendee',
+        ]);
+        Sanctum::actingAs($owner);
+        // Execute
+        $response = $this->postJson("/api/admin/event-participations/{$event->id}/users/{$targetUser->id}");
+        // Assert
+        $response->assertStatus(200);
+        $this->assertDatabaseCount('event_enrolls', 2);
+        $response->assertExactJson($existingEnroll->fresh()->toArray());
+    }
+
+    public function test_add_participant_restores_soft_deleted_participation_and_returns_200(): void
+    {
+        // Prepare
+        $owner = User::factory()->create();
+        $targetUser = User::factory()->create();
+        $event = Event::factory()->create(['user_id' => $owner->id]);
+        ContactRequest::factory()->create([
+            'sender_id' => $owner->id,
+            'receiver_id' => $targetUser->id,
+            'workflow_state' => 'accepted',
+        ]);
+        $trashedEnroll = EventEnroll::create([
+            'event_id' => $event->id,
+            'user_id' => $targetUser->id,
+            'workflow_state' => 'confirmed',
+            'role' => 'admin',
+        ]);
+        $trashedEnroll->delete();
+        Sanctum::actingAs($owner);
+        // Execute
+        $response = $this->postJson("/api/admin/event-participations/{$event->id}/users/{$targetUser->id}");
+        // Assert
+        $response->assertStatus(200);
+        $this->assertDatabaseCount('event_enrolls', 2);
+        $this->assertDatabaseHas('event_enrolls', [
+            'id' => $trashedEnroll->id,
+            'event_id' => $event->id,
+            'user_id' => $targetUser->id,
+            'workflow_state' => 'pending',
+            'role' => 'attendee',
+            'deleted_at' => null,
+        ]);
+    }
+
+    public function test_add_participant_returns_exact_json_matching_fresh_record_on_restoration(): void
+    {
+        // Prepare
+        $owner = User::factory()->create();
+        $targetUser = User::factory()->create();
+        $event = Event::factory()->create(['user_id' => $owner->id]);
+        ContactRequest::factory()->create([
+            'sender_id' => $owner->id,
+            'receiver_id' => $targetUser->id,
+            'workflow_state' => 'accepted',
+        ]);
+        $trashedEnroll = EventEnroll::create([
+            'event_id' => $event->id,
+            'user_id' => $targetUser->id,
+            'workflow_state' => 'confirmed',
+            'role' => 'admin',
+        ]);
+        $trashedEnroll->delete();
+        Sanctum::actingAs($owner);
+        // Execute
+        $response = $this->postJson("/api/admin/event-participations/{$event->id}/users/{$targetUser->id}");
+        // Assert
+        $response->assertStatus(200);
+        $trashedEnroll->refresh();
+        $response->assertExactJson($trashedEnroll->fresh()->toArray());
     }
 }
