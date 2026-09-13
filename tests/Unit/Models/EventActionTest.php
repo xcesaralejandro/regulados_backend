@@ -182,6 +182,14 @@ class EventActionTest extends TestCase
         $this->assertNull($eventAction->completed_at);
     }
 
+    public function test_source_field_is_required(): void
+    {
+        // Assert
+        $this->expectException(QueryException::class);
+        // Execute
+        EventAction::factory()->create(['source' => null]);
+    }
+
     public function test_event_id_field_is_required(): void
     {
         // Assert
