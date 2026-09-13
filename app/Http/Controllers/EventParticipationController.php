@@ -75,7 +75,7 @@ class EventParticipationController extends Controller
         $event = Event::findOrFail($request->event_id);
         $user_id = Auth::id();
         if ($event->user_id === $user_id) {
-            return response()->json(null, Response::HTTP_FORBIDDEN);
+            abort(403);
         }
         $participation = EventEnroll::where('event_id', $event->id)
             ->where('user_id', $user_id)
